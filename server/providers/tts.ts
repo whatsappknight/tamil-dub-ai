@@ -20,6 +20,15 @@ function elevenLabsVoiceSettings(style: string) {
   return settings[style] || settings.natural;
 }
 
+export function elevenLabsFailureMessage(status: number, detail: string) {
+  let code = "";
+  try { code = String((JSON.parse(detail) as { detail?: { code?: string } }).detail?.code || ""); } catch { code = ""; }
+  if (code === "quota_exceeded" || /quota exceeded|credits? remaining/i.test(detail)) return "ElevenLabs has no remaining voice credits for this Tamil-dubbing request. Add credits or use an account with available quota, then retry the failed voice stage.";
+  if (status === 401 || status === 403) return "ElevenLabs could not authorize Tamil voice generation. Verify the configured provider secret and voice endpoint, then retry the failed voice stage.";
+  if (status === 429) return "ElevenLabs is temporarily rate-limiting voice generation. Wait briefly, then retry the failed voice stage.";
+  return `ElevenLabs Tamil voice generation failed (HTTP ${status}). Check the provider account and configured voice endpoint, then retry the failed voice stage.`;
+}
+
 export class ElevenLabsTamilTtsProvider implements TamilTtsProvider {
   async synthesize(input: { text: string; voice: string; style: string; speed: number }) {
     const { endpoint, apiKey } = requireTtsConfig();
@@ -35,7 +44,7 @@ export class ElevenLabsTamilTtsProvider implements TamilTtsProvider {
     });
     if (!response.ok) {
       const detail = await response.text().catch(() => response.statusText);
-      throw new Error(`ElevenLabs Tamil TTS failed (${response.status}): ${detail.slice(0, 500)}`);
+      throw new Error(elevenLabsFailureMessage(response.status, detail));
     }
     return { audio: Buffer.from(await response.arrayBuffer()), contentType: response.headers.get("content-type") || "audio/mpeg", extension: "mp3" as const };
   }

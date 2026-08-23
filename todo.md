@@ -23,3 +23,9 @@
 - [x] Add secure server-side source-media inspection to persist duration and an initial thumbnail immediately after direct upload completion.
 - [x] Add Vitest coverage for upload/settings validation, Tamil TTS provider selection, and processing job-stage transition rules.
 - [x] Verify the complete implementation through type checks, unit tests, visual checks, live ElevenLabs validation, and a local FFmpeg end-to-end workflow with safe non-production inputs.
+- [x] Diagnose and fix the browser-to-secure-storage upload request failure reported after selecting a valid 115 MB MP4 file.
+- [x] Diagnose and fix the server-side processing-output storage failure that returns HTTP 501 during audio extraction.
+- [x] Retry a failed extraction stage and confirm that its actual FFmpeg audio output stores without an HTTP 501 response; the live workflow now advances through extraction, detection, transcription, and translation to Tamil voice generation.
+- [x] Add a regression test that saves an FFmpeg-generated extraction output through the same processing-output storage path.
+- [x] Diagnose and fix the retry control so clicking Retry failed stage creates a new extraction attempt for the existing project.
+- [x] Surface ElevenLabs quota-exhaustion errors as clear, safe retry guidance without exposing provider response metadata or credentials.

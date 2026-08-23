@@ -52,20 +52,19 @@ export async function storagePut(
   const { url: s3Url } = (await presignResp.json()) as { url: string };
   if (!s3Url) throw new Error("Forge returned empty presign URL");
 
-  // 2. PUT file directly to S3
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
+  // 2. PUT a known-length binary body directly to S3. This avoids chunked transfer
+  // semantics that some presigned object-storage endpoints reject for processing output.
+  const bytes = typeof data === "string" ? Buffer.from(data) : Buffer.from(data);
 
   const uploadResp = await fetch(s3Url, {
     method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: blob,
+    headers: { "Content-Type": contentType, "Content-Length": String(bytes.byteLength) },
+    body: bytes,
   });
 
   if (!uploadResp.ok) {
-    throw new Error(`Storage upload to S3 failed (${uploadResp.status})`);
+    const detail = await uploadResp.text().catch(() => uploadResp.statusText);
+    throw new Error(`Storage upload to S3 failed (${uploadResp.status}): ${detail.slice(0, 300)}`);
   }
 
   return { key, url: `/manus-storage/${key}` };
@@ -76,8 +75,17 @@ export async function storageCreatePresignedUpload(
   relKey: string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string; uploadUrl: string }> {
-  const { forgeUrl, forgeKey } = getForgeConfig();
   const key = appendHashSuffix(normalizeKey(relKey));
+  return storageCreatePresignedUploadForKey(key, contentType);
+}
+
+/** Issues a short-lived upload URL for an already-authorized object key. Use only after server-side project ownership checks. */
+export async function storageCreatePresignedUploadForKey(
+  relKey: string,
+  contentType = "application/octet-stream",
+): Promise<{ key: string; url: string; uploadUrl: string }> {
+  const { forgeUrl, forgeKey } = getForgeConfig();
+  const key = normalizeKey(relKey);
   const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
   presignUrl.searchParams.set("path", key);
   const response = await fetch(presignUrl, { headers: { Authorization: `Bearer ${forgeKey}` } });

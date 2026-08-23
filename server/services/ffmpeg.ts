@@ -36,8 +36,9 @@ export async function downloadSignedObject(url: string, targetPath: string) {
 
 export async function uploadLocalFileToStorage(filePath: string, storagePath: string, contentType: string) {
   const { uploadUrl, key, url } = await storageCreatePresignedUpload(storagePath, contentType);
+  const file = await stat(filePath);
   const body = Readable.toWeb(createReadStream(filePath));
-  const response = await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": contentType }, body, duplex: "half" } as RequestInit);
-  if (!response.ok) throw new Error(`Failed to store processing output (${response.status}).`);
-  return { key, url, bytes: (await stat(filePath)).size };
+  const response = await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": contentType, "Content-Length": String(file.size) }, body, duplex: "half" } as RequestInit);
+  if (!response.ok) { const detail = await response.text().catch(() => response.statusText); throw new Error(`Failed to store processing output (${response.status}): ${detail.slice(0, 300)}`); }
+  return { key, url, bytes: file.size };
 }

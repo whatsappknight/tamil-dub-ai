@@ -17,7 +17,7 @@ const voiceOptions = [{ id: "male-1", name: "Male voice 1", detail: "Balanced an
 const languageOptions = [{ id: "auto", label: "Auto detect" }, { id: "en", label: "English" }, { id: "hi", label: "Hindi" }, { id: "te", label: "Telugu" }, { id: "ml", label: "Malayalam" }, { id: "kn", label: "Kannada" }];
 
 function fallbackMime(file: File) { const extension = file.name.split(".").pop()?.toLowerCase(); return file.type || ({ mp4: "video/mp4", mov: "video/quicktime", mkv: "video/x-matroska", webm: "video/webm" } as Record<string, string>)[extension || ""] || ""; }
-function uploadToSignedUrl(file: File, url: string, onProgress: (percent: number) => void) { return new Promise<void>((resolve, reject) => { const xhr = new XMLHttpRequest(); xhr.open("PUT", url); xhr.setRequestHeader("Content-Type", fallbackMime(file)); xhr.upload.onprogress = event => { if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100)); }; xhr.onerror = () => reject(new Error("The video could not be uploaded. Check your connection and try again.")); xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed with status ${xhr.status}.`)); xhr.send(file); }); }
+function uploadToProjectStorage(file: File, path: string, onProgress: (percent: number) => void) { return new Promise<void>((resolve, reject) => { const xhr = new XMLHttpRequest(); xhr.open("POST", path); xhr.setRequestHeader("Content-Type", fallbackMime(file)); xhr.upload.onprogress = event => { if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100)); }; xhr.onerror = () => reject(new Error("The video could not reach secure project storage. Check your connection and try again.")); xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) return resolve(); try { const detail = JSON.parse(xhr.responseText) as { error?: string }; reject(new Error(detail.error || `Upload failed with status ${xhr.status}.`)); } catch { reject(new Error(`Upload failed with status ${xhr.status}.`)); } }; xhr.send(file); }); }
 
 export default function UploadPage() {
   const [, navigate] = useLocation();
@@ -56,7 +56,7 @@ export default function UploadPage() {
     try {
       const mimeType = fallbackMime(file);
       const prepared = await prepare.mutateAsync({ projectName, originalLanguage, voiceId, voiceStyle, preserveBackgroundAudio, preserveSoundEffects, generateSubtitles, burnSubtitles, createSrt, copyrightOwnershipConfirmed: true, copyrightResponsibilityConfirmed: true, filename: file.name, mimeType, sizeBytes: file.size });
-      await uploadToSignedUrl(file, prepared.uploadUrl, setUploadProgress);
+      await uploadToProjectStorage(file, prepared.uploadPath, setUploadProgress);
       await complete.mutateAsync({ projectId: prepared.projectId, file: { filename: file.name, mimeType, sizeBytes: file.size } });
       await start.mutateAsync({ projectId: prepared.projectId });
       toast.success("Upload complete. Tamil dubbing has started."); navigate(`/projects/${prepared.projectId}`);
