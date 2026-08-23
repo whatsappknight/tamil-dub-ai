@@ -1,5 +1,7 @@
 # TamilDub AI — Project TODO
 
+- [x] Evaluate official Google AI Studio speech capabilities for Tamil voice generation and, if supported, implement it as a secure server-side fallback provider.
+
 - [x] Define secure upload limits and validate direct user-uploaded MP4, MOV, MKV, and WebM files without any external-download capability.
 - [x] Implement mandatory two-part copyright and permission confirmation before an upload can be processed.
 - [x] Design and apply the project, media-file, processing-job, source/output-file, transcript-segment, render-output, and retry-attempt database schema.
