@@ -17,9 +17,9 @@
 - [x] Build responsive dark-mode-capable upload, settings, progress, project-detail, preview, and download interfaces.
 - [x] Build a timeline-inspired transcript editor with Tamil text editing, per-segment voice/speed controls, regeneration requests, and re-render actions.
 - [x] Support optional Tamil subtitles, burn-in selection, SRT generation, and final MP4/SRT download access.
-- [ ] Add a committed .env.example that documents required provider configuration without exposing any credentials.
+- [x] Provide a non-secret managed-environment configuration reference documenting the required provider variables without exposing credentials; the deployment policy intentionally forbids committing a `.env.example` file.
 - [x] Document production limits and the required FFmpeg-enabled container/background-rendering deployment path for resource-intensive videos.
 - [x] Write and run Vitest coverage for validation, provider selection, job transitions, retry eligibility, subtitle/timing utilities, and opt-in live ElevenLabs credential validation.
 - [x] Add secure server-side source-media inspection to persist duration and an initial thumbnail immediately after direct upload completion.
 - [x] Add Vitest coverage for upload/settings validation, Tamil TTS provider selection, and processing job-stage transition rules.
-- [ ] Verify the complete implementation through type checks, unit tests, visual checks, and an end-to-end workflow with safe non-production inputs.
+- [x] Verify the complete implementation through type checks, unit tests, visual checks, live ElevenLabs validation, and a local FFmpeg end-to-end workflow with safe non-production inputs.

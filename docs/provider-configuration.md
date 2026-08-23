@@ -2,6 +2,8 @@
 
 TamilDub AI stores all provider credentials in managed server-side environment settings. Do not put secret values in the browser, committed source files, client-side variables, or a public repository.
 
+> The deployment environment manages protected variables directly, so a committed `.env.example` file is intentionally not created. This document is the non-secret configuration reference for the exact supported variable names and values.
+
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `TTS_PROVIDER` | Yes for real voice synthesis | Set to `elevenlabs` for the included ElevenLabs adapter, or `generic-openai` for a compatible future adapter. |
