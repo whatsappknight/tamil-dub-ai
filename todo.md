@@ -51,3 +51,5 @@
 - [x] Complete full continuity verification for all remaining extended quiet intervals in repaired project 120001, correcting any interval with missing dialogue.
 - [x] Preserve a safely attenuated source-audio bed beneath the Tamil voice track during final mixing so non-dialogue sections do not become silent.
 - [x] Explicitly inspect each remaining extended quiet interval in the repaired MP4 and record whether it is an intentional scene pause or a missing-dialogue defect.
+- [x] Play and verify the regenerated project 120001 MP4 for Tamil voice synchronization and background-audio continuity.
+- [x] Measure and assess the Tamil voiceover-to-background balance in the regenerated project 120001 MP4, then adjust only if warranted; no adjustment was warranted after level and headroom checks.
