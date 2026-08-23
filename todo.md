@@ -1,0 +1,25 @@
+# TamilDub AI — Project TODO
+
+- [x] Define secure upload limits and validate direct user-uploaded MP4, MOV, MKV, and WebM files without any external-download capability.
+- [x] Implement mandatory two-part copyright and permission confirmation before an upload can be processed.
+- [x] Design and apply the project, media-file, processing-job, source/output-file, transcript-segment, render-output, and retry-attempt database schema.
+- [x] Persist storage keys and metadata only; never store video, audio, image, or subtitle bytes in the database.
+- [x] Create server-side secure upload handling with progress reporting, source-file metadata, duration inspection, and thumbnail support.
+- [x] Create replaceable Speech-to-Text, Translation, Tamil Text-to-Speech, and media-rendering provider interfaces.
+- [x] Implement built-in timestamped transcription and detected-language support behind the Speech-to-Text interface.
+- [x] Implement context-aware Tamil translation with segment timing constraints behind the Translation interface.
+- [x] Implement environment-configured Tamil Text-to-Speech provider adapters and clear configuration errors when a provider is unavailable.
+- [x] Add an official ElevenLabs Tamil TTS adapter that uses `xi-api-key`, `text`, `model_id`, and a voice ID encoded in the endpoint URL while retaining the generic provider contract.
+- [x] Validate the configured ElevenLabs connection with a minimal authenticated Tamil synthesis request without logging or committing credentials.
+- [x] Implement FFmpeg-compatible extraction, timing synchronization, audio mixing/replacement, optional subtitle generation, and MP4 rendering commands.
+- [x] Implement persisted stage-level job status, progress percentages, messages, retry handling, and failure details.
+- [x] Build authenticated dashboard metrics and project history for recent, processing, completed, and failed projects.
+- [x] Build responsive dark-mode-capable upload, settings, progress, project-detail, preview, and download interfaces.
+- [x] Build a timeline-inspired transcript editor with Tamil text editing, per-segment voice/speed controls, regeneration requests, and re-render actions.
+- [x] Support optional Tamil subtitles, burn-in selection, SRT generation, and final MP4/SRT download access.
+- [ ] Add a committed .env.example that documents required provider configuration without exposing any credentials.
+- [x] Document production limits and the required FFmpeg-enabled container/background-rendering deployment path for resource-intensive videos.
+- [x] Write and run Vitest coverage for validation, provider selection, job transitions, retry eligibility, subtitle/timing utilities, and opt-in live ElevenLabs credential validation.
+- [x] Add secure server-side source-media inspection to persist duration and an initial thumbnail immediately after direct upload completion.
+- [x] Add Vitest coverage for upload/settings validation, Tamil TTS provider selection, and processing job-stage transition rules.
+- [ ] Verify the complete implementation through type checks, unit tests, visual checks, and an end-to-end workflow with safe non-production inputs.

@@ -71,6 +71,25 @@ export async function storagePut(
   return { key, url: `/manus-storage/${key}` };
 }
 
+/** Issues a one-time object-storage upload URL so large video bytes bypass the database and application memory. */
+export async function storageCreatePresignedUpload(
+  relKey: string,
+  contentType = "application/octet-stream",
+): Promise<{ key: string; url: string; uploadUrl: string }> {
+  const { forgeUrl, forgeKey } = getForgeConfig();
+  const key = appendHashSuffix(normalizeKey(relKey));
+  const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
+  presignUrl.searchParams.set("path", key);
+  const response = await fetch(presignUrl, { headers: { Authorization: `Bearer ${forgeKey}` } });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => response.statusText);
+    throw new Error(`Storage upload URL request failed (${response.status}): ${detail}`);
+  }
+  const payload = await response.json() as { url?: string };
+  if (!payload.url) throw new Error("Storage service returned an empty upload URL.");
+  return { key, url: `/manus-storage/${key}`, uploadUrl: payload.url };
+}
+
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
   return { key, url: `/manus-storage/${key}` };

@@ -21,15 +21,16 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { FolderOpen, LayoutDashboard, LogOut, PanelLeft, Plus } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Studio overview", path: "/" },
+  { icon: Plus, label: "New Tamil dub", path: "/upload" },
+  { icon: FolderOpen, label: "Project library", path: "/projects" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -168,8 +169,8 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                  <span className="font-semibold tracking-tight truncate text-violet-600 dark:text-violet-300">
+                    TamilDub AI
                   </span>
                 </div>
               ) : null}
@@ -197,6 +198,9 @@ function DashboardLayoutContent({
                 );
               })}
             </SidebarMenu>
+            <div className="mt-auto px-3 pb-3 group-data-[collapsible=icon]:px-2">
+              <div className="rounded-xl border border-violet-400/15 bg-violet-500/5 px-3 py-3 text-xs leading-5 text-muted-foreground group-data-[collapsible=icon]:hidden">Direct-upload studio. Your videos are never sourced from external platforms.</div>
+            </div>
           </SidebarContent>
 
           <SidebarFooter className="p-3">
