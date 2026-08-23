@@ -73,3 +73,14 @@
 - [x] Validate the current Tamil-only replacement at representative dialogue timestamps and record the final audio-mode outcome; 00:13–00:32 transcribes as Tamil only and final audio is a single 24 kHz mono replacement track.
 - [x] Experiment with an ambience-preserving original-speech suppression approach on project 120001 source audio and document its residual dialogue versus ambience quality; stereo phase cancellation removed speech but reduced average source level from −19.1 dB to −45.7 dB and eliminated usable ambience.
 - [x] Retain Tamil-only replacement because the tested speech-suppression approach does not reliably preserve the background mix while removing English dialogue.
+- [x] Add speaker labels and per-speaker Tamil voice assignments to transcript segments and regeneration behavior.
+- [x] Add selectable Tamil speaking styles with project defaults and per-segment overrides.
+- [x] Add export presets for common landscape, vertical, and messaging-platform delivery formats.
+- [x] Test speaker voices, Tamil styles, and export-preset render selection across the editor and pipeline.
+- [x] Preserve manual speaker labels as a first-class segment workflow and bulk-regenerate every affected speaker segment after applying a voice/style profile.
+- [x] Make the expanded Tamil speaking-style set available as a project default during upload and validate its creation payload.
+- [x] Add automated and pipeline smoke coverage for speaker-profile regeneration and every delivery export preset.
+- [x] Add router-level coverage proving a speaker-profile assignment bulk-regenerates matching segments and preserves their manual labels.
+- [x] Validate a real project-creation request accepts and persists an expanded default Tamil speaking style.
+- [x] Add multi-segment speaker regeneration integration coverage that verifies matching labels are preserved and every matching voice output is replaced.
+- [x] Verify an expanded Tamil style persists through a real create-and-retrieve project path without creating unwanted production media.

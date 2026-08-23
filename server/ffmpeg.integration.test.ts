@@ -3,6 +3,7 @@ import os from "os";
 import path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { downloadSignedObject, duckedTamilBackgroundFilter, probeDurationSeconds, runFfmpeg } from "./services/ffmpeg";
+import { buildExportRenderPlan } from "./services/export-presets";
 
 let workDir = "";
 
@@ -33,6 +34,19 @@ describe("FFmpeg TamilDub render path", () => {
     expect(await probeDurationSeconds(mixed)).toBeGreaterThan(1);
     expect((await stat(mixed)).size).toBeGreaterThan(1_000);
   }, 30_000);
+
+  it("renders every delivery export preset with its intended geometry", async () => {
+    workDir = await mkdtemp(path.join(os.tmpdir(), "tamil-dub-export-preset-test-"));
+    const source = path.join(workDir, "source.mp4"); const audio = path.join(workDir, "tamil.m4a");
+    await runFfmpeg(["-f", "lavfi", "-i", "color=c=0x33245f:s=320x180:r=24", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=24000", "-t", "1.25", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", source]);
+    await runFfmpeg(["-f", "lavfi", "-i", "sine=frequency=660:sample_rate=24000", "-t", "1.25", "-c:a", "aac", audio]);
+    for (const preset of ["source", "youtube", "shorts", "whatsapp"] as const) {
+      const plan = buildExportRenderPlan(preset); const output = path.join(workDir, `${preset}-output.mp4`);
+      await runFfmpeg(["-i", source, "-i", audio, "-map", "0:v:0", "-map", "1:a:0", ...plan.videoArgs, "-c:a", "aac", "-t", "1.25", output]);
+      expect((await stat(output)).size).toBeGreaterThan(1_000);
+      expect(await probeDurationSeconds(output)).toBeGreaterThan(1);
+    }
+  }, 60_000);
 
   it("fails safely instead of waiting indefinitely for a processing-input download", async () => {
     vi.useFakeTimers();
