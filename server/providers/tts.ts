@@ -1,12 +1,19 @@
 import type { TamilTtsProvider } from "./types";
 
-const VOICE_ENV_KEYS: Record<string, string> = { "male-1": "TTS_VOICE_MALE_1", "male-2": "TTS_VOICE_MALE_2", "female-1": "TTS_VOICE_FEMALE_1", "female-2": "TTS_VOICE_FEMALE_2" };
+const VOICE_ENV_KEYS: Record<string, string> = { "male-1": "TTS_VOICE_MALE_1", "male-2": "TTS_VOICE_MALE_2", "female-1": "TTS_VOICE_FEMALE_1", "female-2": "TTS_VOICE_FEMALE_2", narrator: "TTS_VOICE_NARRATOR", youth: "TTS_VOICE_YOUTH" };
 
 function requireTtsConfig() {
   const endpoint = process.env.TTS_API_URL;
   const apiKey = process.env.TTS_API_KEY;
   if (!endpoint || !apiKey) throw new Error("Tamil TTS is not configured. Add TTS_API_URL and TTS_API_KEY in managed environment settings before processing.");
   return { endpoint, apiKey };
+}
+
+function fallbackTtsConfig() {
+  const endpoint = process.env.TTS_FALLBACK_API_URL;
+  const apiKey = process.env.TTS_FALLBACK_API_KEY;
+  if (!endpoint || !apiKey) throw new Error("No fallback Tamil TTS provider is configured.");
+  return { endpoint, apiKey, model: process.env.TTS_FALLBACK_MODEL };
 }
 
 function elevenLabsVoiceSettings(style: string) {
@@ -18,6 +25,14 @@ function elevenLabsVoiceSettings(style: string) {
     energetic: { stability: 0.32, similarity_boost: 0.72, style: 0.5 },
   };
   return settings[style] || settings.natural;
+}
+
+function elevenLabsEndpointForVoice(endpoint: string, voice: string) {
+  const configuredVoiceId = process.env[VOICE_ENV_KEYS[voice] || ""];
+  if (!configuredVoiceId) return endpoint;
+  const url = new URL(endpoint);
+  url.pathname = url.pathname.replace(/\/text-to-speech\/[^/]+$/, `/text-to-speech/${configuredVoiceId}`);
+  return url.toString();
 }
 
 export function elevenLabsFailureMessage(status: number, detail: string) {
@@ -32,7 +47,7 @@ export function elevenLabsFailureMessage(status: number, detail: string) {
 export class ElevenLabsTamilTtsProvider implements TamilTtsProvider {
   async synthesize(input: { text: string; voice: string; style: string; speed: number }) {
     const { endpoint, apiKey } = requireTtsConfig();
-    const response = await fetch(endpoint, {
+    const response = await fetch(elevenLabsEndpointForVoice(endpoint, input.voice), {
       method: "POST",
       headers: { "xi-api-key": apiKey, "Content-Type": "application/json", Accept: "audio/mpeg" },
       body: JSON.stringify({
@@ -51,12 +66,15 @@ export class ElevenLabsTamilTtsProvider implements TamilTtsProvider {
 }
 
 export class GenericOpenAiCompatibleTamilTtsProvider implements TamilTtsProvider {
+  constructor(private config?: { endpoint: string; apiKey: string; model?: string }) {}
   async synthesize(input: { text: string; voice: string; style: string; speed: number }) {
-    const { endpoint, apiKey } = requireTtsConfig();
+    const configured = this.config || requireTtsConfig();
+    const { endpoint, apiKey } = configured;
+    const model = this.config?.model || process.env.TTS_MODEL;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: process.env.TTS_MODEL || undefined, input: input.text, voice: process.env[VOICE_ENV_KEYS[input.voice]] || input.voice, speed: input.speed, response_format: "mp3", language: "ta", style: input.style }),
+      body: JSON.stringify({ model: model || undefined, input: input.text, voice: process.env[VOICE_ENV_KEYS[input.voice]] || input.voice, speed: input.speed, response_format: "mp3", language: "ta", style: input.style }),
     });
     if (!response.ok) {
       const detail = await response.text().catch(() => response.statusText);
@@ -70,6 +88,18 @@ export function selectTamilTtsProvider(provider = process.env.TTS_PROVIDER || "g
   if (provider === "elevenlabs") return new ElevenLabsTamilTtsProvider();
   if (provider === "generic-openai") return new GenericOpenAiCompatibleTamilTtsProvider();
   throw new Error(`Unsupported configured Tamil TTS provider: ${provider}`);
+}
+
+export function voiceFallbackConfigured() { return Boolean(process.env.TTS_FALLBACK_PROVIDER && process.env.TTS_FALLBACK_API_URL && process.env.TTS_FALLBACK_API_KEY); }
+
+export async function synthesizeTamilVoice(input: { text: string; voice: string; style: string; speed: number }, allowFallback: boolean) {
+  try { return await selectTamilTtsProvider().synthesize(input); }
+  catch (primaryError) {
+    if (!allowFallback || !voiceFallbackConfigured()) throw primaryError;
+    if (process.env.TTS_FALLBACK_PROVIDER !== "generic-openai") throw new Error("A fallback provider is configured but unsupported. Set TTS_FALLBACK_PROVIDER to generic-openai or disable fallback.");
+    try { return await new GenericOpenAiCompatibleTamilTtsProvider(fallbackTtsConfig()).synthesize(input); }
+    catch { throw primaryError; }
+  }
 }
 
 /** Provider facade preserves a stable contract while allowing server-side provider selection through managed environment variables. */

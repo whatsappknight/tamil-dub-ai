@@ -29,3 +29,12 @@
 - [x] Add a regression test that saves an FFmpeg-generated extraction output through the same processing-output storage path.
 - [x] Diagnose and fix the retry control so clicking Retry failed stage creates a new extraction attempt for the existing project.
 - [x] Surface ElevenLabs quota-exhaustion errors as clear, safe retry guidance without exposing provider response metadata or credentials.
+- [x] Add project-level terminology and Tamil pronunciation rules that are applied before voice generation.
+- [x] Add richer Tamil voice controls, including multiple configured voice profiles and a fallback-ready provider preference.
+- [x] Add configurable Tamil subtitle appearance controls for burned-in subtitle rendering.
+- [x] Extend the project setup and timeline editor interfaces with the new localization controls and expanded voice-profile choices.
+- [x] Test the enhanced localization rule, subtitle-style, and fallback-selection behavior.
+- [ ] Add a controlled test for an unsupported fallback provider configuration.
+- [ ] Add a render-path regression test that verifies the selected burned-in subtitle style reaches FFmpeg arguments.
+- [ ] Add per-segment pronunciation-hint editing to the timeline editor and persist it through the project update flow.
+- [ ] Add controlled tests for primary Tamil TTS failure, enabled fallback selection, disabled fallback behavior, and unsupported fallback configuration.

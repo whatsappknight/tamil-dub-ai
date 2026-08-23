@@ -1,3 +1,5 @@
+import type { LocalizationRule } from "../services/localization";
+
 export type TimestampedSegment = {
   startSeconds: number;
   endSeconds: number;
@@ -21,6 +23,7 @@ export interface SpeechToTextProvider {
 export interface TranslationProvider {
   translateToTamil(input: {
     segments: Array<{ segmentId: number; sourceText: string; targetDurationSeconds: number }>;
+    terminologyRules?: LocalizationRule[];
   }): Promise<TranslationSegment[]>;
 }
 

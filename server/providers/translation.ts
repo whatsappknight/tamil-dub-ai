@@ -10,11 +10,11 @@ function responseContentToString(content: unknown) {
 }
 
 export class BuiltInTamilTranslationProvider implements TranslationProvider {
-  async translateToTamil(input: { segments: Array<{ segmentId: number; sourceText: string; targetDurationSeconds: number }> }) {
+  async translateToTamil(input: { segments: Array<{ segmentId: number; sourceText: string; targetDurationSeconds: number }>; terminologyRules?: Array<{ source: string; target: string }> }) {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "You are an expert Tamil audiovisual localizer. Translate spoken dialogue into idiomatic, natural Tamil for Tamil-speaking viewers. Preserve meaning, speaker intent, technical terms that Tamil speakers naturally use in English, and segment order. Keep each line concise enough to fit its timing. Never add commentary or omit a segment." },
-        { role: "user", content: JSON.stringify({ targetLanguage: "Tamil", segments: input.segments }) },
+        { role: "system", content: "You are an expert Tamil audiovisual localizer. Translate spoken dialogue into idiomatic, natural Tamil for Tamil-speaking viewers. Preserve meaning, speaker intent, technical terms that Tamil speakers naturally use in English, and segment order. Apply provided terminology rules exactly where relevant. Keep each line concise enough to fit its timing. Never add commentary or omit a segment." },
+        { role: "user", content: JSON.stringify({ targetLanguage: "Tamil", terminologyRules: input.terminologyRules || [], segments: input.segments }) },
       ],
       response_format: {
         type: "json_schema",

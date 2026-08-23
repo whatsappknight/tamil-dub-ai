@@ -36,9 +36,9 @@ export async function getUserByOpenId(openId: string) {
   return (await db.select().from(users).where(eq(users.openId, openId)).limit(1))[0];
 }
 
-export async function createProjectDraft(input: { userId: number; projectName: string; originalLanguage: string; voiceId: string; voiceStyle: string; preserveBackgroundAudio: boolean; preserveSoundEffects: boolean; generateSubtitles: boolean; burnSubtitles: boolean; createSrt: boolean; copyrightOwnershipConfirmed: true; copyrightResponsibilityConfirmed: true }) {
+export async function createProjectDraft(input: { userId: number; projectName: string; originalLanguage: string; voiceId: string; voiceStyle: string; terminologyRules: string; pronunciationRules: string; subtitleStyle: "minimal" | "studio" | "high_contrast"; allowVoiceProviderFallback: boolean; preserveBackgroundAudio: boolean; preserveSoundEffects: boolean; generateSubtitles: boolean; burnSubtitles: boolean; createSrt: boolean; copyrightOwnershipConfirmed: true; copyrightResponsibilityConfirmed: true }) {
   const db = requireDb(await getDb());
-  const values: InsertProject = { userId: input.userId, projectName: input.projectName, originalLanguage: input.originalLanguage, targetLanguage: "Tamil", voiceId: input.voiceId, voiceStyle: input.voiceStyle, preserveBackgroundAudio: input.preserveBackgroundAudio, preserveSoundEffects: input.preserveSoundEffects, generateSubtitles: input.generateSubtitles, burnSubtitles: input.burnSubtitles, createSrt: input.createSrt, copyrightOwnershipConfirmed: input.copyrightOwnershipConfirmed, copyrightResponsibilityConfirmed: input.copyrightResponsibilityConfirmed, status: "draft", currentStage: "uploading", progressPercent: 0, statusMessage: "Draft created.", audioMode: "replace_original" };
+  const values: InsertProject = { userId: input.userId, projectName: input.projectName, originalLanguage: input.originalLanguage, targetLanguage: "Tamil", voiceId: input.voiceId, voiceStyle: input.voiceStyle, terminologyRules: input.terminologyRules || null, pronunciationRules: input.pronunciationRules || null, subtitleStyle: input.subtitleStyle, allowVoiceProviderFallback: input.allowVoiceProviderFallback, preserveBackgroundAudio: input.preserveBackgroundAudio, preserveSoundEffects: input.preserveSoundEffects, generateSubtitles: input.generateSubtitles, burnSubtitles: input.burnSubtitles, createSrt: input.createSrt, copyrightOwnershipConfirmed: input.copyrightOwnershipConfirmed, copyrightResponsibilityConfirmed: input.copyrightResponsibilityConfirmed, status: "draft", currentStage: "uploading", progressPercent: 0, statusMessage: "Draft created.", audioMode: "replace_original" };
   const result = await db.insert(projects).values(values);
   return (await db.select().from(projects).where(eq(projects.id, Number(result[0].insertId))).limit(1))[0]!;
 }
@@ -118,7 +118,7 @@ export async function replaceProjectSegments(projectId: number, segments: Array<
   const db = requireDb(await getDb());
   await db.delete(projectSegments).where(eq(projectSegments.projectId, projectId));
   if (!segments.length) return;
-  const values: InsertProjectSegment[] = segments.map((segment, index) => ({ projectId, sortOrder: index, startSeconds: segment.startSeconds, endSeconds: segment.endSeconds, sourceText: segment.sourceText, speaker: segment.speaker, tamilText: null, voiceId, voiceStyle, speed: "1.00", status: "transcribed" }));
+  const values: InsertProjectSegment[] = segments.map((segment, index) => ({ projectId, sortOrder: index, startSeconds: segment.startSeconds, endSeconds: segment.endSeconds, sourceText: segment.sourceText, speaker: segment.speaker, tamilText: null, voiceId, voiceStyle, pronunciationHint: null, speed: "1.00", status: "transcribed" }));
   await db.insert(projectSegments).values(values);
 }
 

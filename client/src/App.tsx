@@ -4,9 +4,9 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Home from "./pages/Home";
-import UploadPage from "./pages/UploadPage";
+import LocalizationUploadPage from "./pages/LocalizationUploadPage";
 import ProjectsPage from "./pages/ProjectsPage";
-import ProjectPage from "./pages/ProjectPage";
+import LocalizationProjectPage from "./pages/LocalizationProjectPage";
 import DashboardLayout from "./components/DashboardLayout";
 
 function Router() {
@@ -15,9 +15,9 @@ function Router() {
     <DashboardLayout>
       <Switch>
         <Route path={"/"} component={Home} />
-        <Route path={"/upload"} component={UploadPage} />
+        <Route path={"/upload"} component={LocalizationUploadPage} />
         <Route path={"/projects"} component={ProjectsPage} />
-        <Route path={"/projects/:projectId"} component={ProjectPage} />
+        <Route path={"/projects/:projectId"} component={LocalizationProjectPage} />
         <Route path={"/404"} component={NotFound} />
         <Route component={NotFound} />
       </Switch>
