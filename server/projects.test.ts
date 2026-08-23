@@ -3,7 +3,7 @@ import { isRetryableStage, stageAtOrAfter } from "../shared/pipeline";
 import { selectTamilTtsProvider, ElevenLabsTamilTtsProvider, GenericOpenAiCompatibleTamilTtsProvider } from "./providers/tts";
 import { buildSrt } from "./services/subtitles";
 import { validateDirectVideoUpload } from "./services/upload-validation";
-import { needsVoiceGeneration } from "./services/pipeline";
+import { needsVoiceGeneration, synchronizationProgressMessage } from "./services/pipeline";
 
 describe("TamilDub AI pipeline utilities", () => {
   it("marks media-processing failures as retryable while excluding terminal states", () => { expect(isRetryableStage("rendering_video")).toBe(true); expect(isRetryableStage("completed")).toBe(false); });
@@ -23,5 +23,9 @@ describe("TamilDub AI pipeline utilities", () => {
     expect(needsVoiceGeneration({ status: "voiced", ttsAudioKey: "projects/120001/tts/segment-1.mp3" })).toBe(false);
     expect(needsVoiceGeneration({ status: "translated", ttsAudioKey: null })).toBe(true);
     expect(needsVoiceGeneration({ status: "voiced", ttsAudioKey: null })).toBe(true);
+  });
+  it("reports bounded, human-readable synchronization progress for long voice tracks", () => {
+    expect(synchronizationProgressMessage(10, 209)).toBe("Synchronizing Tamil speech segment 10/209.");
+    expect(synchronizationProgressMessage(220, 209)).toBe("Synchronizing Tamil speech segment 209/209.");
   });
 });

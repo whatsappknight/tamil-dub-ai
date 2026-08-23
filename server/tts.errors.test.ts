@@ -21,6 +21,29 @@ describe("ElevenLabs Tamil TTS error guidance", () => {
     vi.unstubAllEnvs();
   });
 
+  it("uses the ElevenLabs backup before the configured tertiary fallback", async () => {
+    vi.stubEnv("TTS_PROVIDER", "elevenlabs"); vi.stubEnv("TTS_API_URL", "https://example.test/voice"); vi.stubEnv("TTS_BACKUP_API_KEY", "backup-test-key");
+    const fallback = vi.fn(() => ({ synthesize: async () => ({ audio: Buffer.from("tertiary"), contentType: "audio/mpeg", extension: "mp3" as const }) }));
+    const result = await synthesizeTamilVoice({ text: "வணக்கம்", voice: "male-1", style: "natural", speed: 1 }, true, { primary: () => ({ synthesize: async () => { throw new Error("primary failed"); } }), elevenLabsBackup: () => ({ synthesize: async () => ({ audio: Buffer.from("backup"), contentType: "audio/mpeg", extension: "mp3" as const }) }), fallback });
+    expect(result.audio.toString()).toBe("backup");
+    expect(fallback).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it("does not invoke any fallback when the project disables fallback", async () => {
+    const fallback = vi.fn(() => ({ synthesize: async () => ({ audio: Buffer.from("fallback"), contentType: "audio/mpeg", extension: "mp3" as const }) }));
+    await expect(synthesizeTamilVoice({ text: "வணக்கம்", voice: "female-1", style: "natural", speed: 1 }, false, { primary: () => ({ synthesize: async () => { throw new Error("primary failed"); } }), fallback })).rejects.toThrow("primary failed");
+    expect(fallback).not.toHaveBeenCalled();
+  });
+
+  it("does not invoke an arbitrary fallback for an unsupported configured provider", async () => {
+    vi.stubEnv("TTS_PROVIDER", "generic-openai"); vi.stubEnv("TTS_FALLBACK_PROVIDER", "unsupported-provider");
+    const fallback = vi.fn(() => ({ synthesize: async () => ({ audio: Buffer.from("fallback"), contentType: "audio/mpeg", extension: "mp3" as const }) }));
+    await expect(synthesizeTamilVoice({ text: "வணக்கம்", voice: "female-1", style: "natural", speed: 1 }, true, { primary: () => ({ synthesize: async () => { throw new Error("primary failed"); } }), fallback })).rejects.toThrow("primary failed");
+    expect(fallback).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
   it("reports a controlled timeout without provider metadata", async () => {
     vi.useFakeTimers();
     const request = vi.fn((_input: string | URL | Request, init?: RequestInit) => new Promise<Response>((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))));

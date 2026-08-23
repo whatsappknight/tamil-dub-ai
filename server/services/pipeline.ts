@@ -21,6 +21,7 @@ async function runStage<T>(projectId: number, stage: PipelineStage, message: str
 }
 async function localObject(key: string, workDir: string, filename: string) { const target = path.join(workDir, filename); await downloadSignedObject(await storageGetSignedUrl(key), target); return target; }
 export function needsVoiceGeneration(segment: { status: string; ttsAudioKey: string | null }) { return segment.status !== "voiced" || !segment.ttsAudioKey; }
+export function synchronizationProgressMessage(completedSegments: number, totalSegments: number) { return `Synchronizing Tamil speech segment ${Math.min(Math.max(completedSegments, 0), Math.max(totalSegments, 0))}/${Math.max(totalSegments, 0)}.`; }
 async function extractAudio(source: string, target: string) { await runFfmpeg(["-i", source, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "24k", target]); }
 async function chunkAudio(audioPath: string, workDir: string) {
   const duration = await probeDurationSeconds(audioPath);
@@ -45,7 +46,7 @@ async function voiceTrack(projectId: number, duration: number, workDir: string) 
     if (!segment.ttsAudioKey) throw new Error(`Voice audio is missing for segment ${segment.id}.`);
     const start = Number(segment.startSeconds); const end = Number(segment.endSeconds);
     if (start > cursor + 0.01) { const silence = path.join(workDir, `gap-${index}.wav`); await silentAudio(silence, start - cursor); audioPaths.push(silence); }
-    const source = await localObject(segment.ttsAudioKey, workDir, `segment-${segment.id}.mp3`); const normalized = path.join(workDir, `timed-${segment.id}.wav`); await timedAudio(source, normalized, end - start, Number(segment.speed)); audioPaths.push(normalized); cursor = Math.max(cursor, end);
+    const source = await localObject(segment.ttsAudioKey, workDir, `segment-${segment.id}.mp3`); const normalized = path.join(workDir, `timed-${segment.id}.wav`); await timedAudio(source, normalized, end - start, Number(segment.speed)); audioPaths.push(normalized); cursor = Math.max(cursor, end); if (index === 0 || (index + 1) % 10 === 0 || index + 1 === segments.length) await updateProject(projectId, { statusMessage: synchronizationProgressMessage(index + 1, segments.length) });
   }
   if (cursor < duration) { const tail = path.join(workDir, "tail.wav"); await silentAudio(tail, duration - cursor); audioPaths.push(tail); }
   if (!audioPaths.length) throw new Error("No Tamil speech segments are available for timing synchronization.");
