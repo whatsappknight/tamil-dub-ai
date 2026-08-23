@@ -53,3 +53,15 @@
 - [x] Explicitly inspect each remaining extended quiet interval in the repaired MP4 and record whether it is an intentional scene pause or a missing-dialogue defect.
 - [x] Play and verify the regenerated project 120001 MP4 for Tamil voice synchronization and background-audio continuity.
 - [x] Measure and assess the Tamil voiceover-to-background balance in the regenerated project 120001 MP4, then adjust only if warranted; no adjustment was warranted after level and headroom checks.
+- [x] Add an accessible, responsive waveform preview with timestamped dialogue markers, playback synchronization, and marker seeking on the project-detail page.
+- [x] Verify and correct dialogue-marker activation so each marker seeks into and highlights its own timestamp range.
+- [x] Verify waveform readability, marker tap targets, and seek controls at a mobile viewport width.
+- [x] Increase mobile dialogue-marker hit areas while preserving the compact multi-lane waveform visualization.
+- [x] Interact with a dialogue marker and waveform seek control in a narrow viewport to verify touch usability and layout stability.
+- [x] Perform a narrow-viewport interaction on the waveform seek surface and a touch-sized dialogue chip, then confirm the synchronized playhead state.
+- [x] Perform a true narrow-viewport browser interaction on the waveform seek surface and mobile dialogue chip, then confirm stable synchronized playback state.
+- [x] Restore development-preview project loading by ensuring enabled guest mode does not wait on an external authentication request.
+- [x] Preserve signed-in user precedence in development preview while using guest fallback only when no session is present.
+- [x] Add regression coverage for authenticated-user precedence and unauthenticated non-blocking guest fallback in preview mode.
+- [x] Diagnose and eliminate any remaining cold-start delay in unauthenticated development-preview guest resolution while retaining signed-in user precedence.
+- [x] Bound development-preview authenticated-session resolution and fall back safely to the owner guest only when signed-session lookup stalls.

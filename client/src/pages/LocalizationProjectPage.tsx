@@ -1,4 +1,5 @@
 import { ProjectStatusBadge } from "@/components/ProjectStatusBadge";
+import { WaveformPreview } from "@/components/WaveformPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatDate, formatDuration, stageLabel } from "@/lib/format";
 import { trpc } from "@/lib/trpc";
 import { Download, FileText, Loader2, Pencil, RefreshCcw, RotateCw, Save, Volume2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLocation, useRoute } from "wouter";
 
@@ -29,6 +30,9 @@ export default function LocalizationProjectPage() {
   const [voiceStyle, setVoiceStyle] = useState<typeof styles[number]>("natural");
   const [speed, setSpeed] = useState("1");
   const [retryNotice, setRetryNotice] = useState<string | null>(null);
+  const previewRef = useRef<HTMLVideoElement | null>(null);
+  const [previewTime, setPreviewTime] = useState(0);
+  const [previewDuration, setPreviewDuration] = useState<number | null>(null);
 
   const refresh = useCallback(() => void utils.projects.get.invalidate({ projectId }), [projectId, utils.projects.get]);
   const retry = trpc.projects.retry.useMutation({
@@ -67,6 +71,17 @@ export default function LocalizationProjectPage() {
     const timer = window.setInterval(refresh, 3000);
     return () => window.clearInterval(timer);
   }, [project?.status, refresh]);
+
+  const waveformDuration = previewDuration ?? project?.outputDurationSeconds ?? project?.sourceDurationSeconds ?? 0;
+  const mixedAudioUrl = query.data?.files.find(file => file.role === "mixed_audio")?.url ?? project?.finalVideoUrl;
+  const seekPreview = useCallback((seconds: number) => {
+    const video = previewRef.current;
+    if (!video) return;
+    const duration = Number.isFinite(video.duration) ? video.duration : waveformDuration;
+    const target = Math.max(0, Math.min(duration || 0, seconds));
+    video.currentTime = target;
+    setPreviewTime(target);
+  }, [waveformDuration]);
 
   if (query.isLoading) return <div className="mx-auto max-w-7xl p-8 text-sm text-muted-foreground">Loading project workspace…</div>;
   if (!project) return <div className="mx-auto max-w-7xl p-8">This project is unavailable.</div>;
@@ -135,12 +150,33 @@ export default function LocalizationProjectPage() {
         {project.lastError ? <p className="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/5 p-3 text-sm text-rose-200">{project.lastError}</p> : null}
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
-        <section className="rounded-3xl border border-border/70 bg-card p-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
+        <section className="min-w-0 rounded-3xl border border-border/70 bg-card p-6">
           <h2 className="font-semibold">Final preview</h2>
           {project.finalVideoUrl ? (
             <>
-              <video controls className="mt-4 aspect-video w-full rounded-xl bg-black" src={project.finalVideoUrl} />
+              <video
+                ref={previewRef}
+                controls
+                className="mt-4 aspect-video w-full rounded-xl bg-black"
+                src={project.finalVideoUrl}
+                onLoadedMetadata={event => setPreviewDuration(event.currentTarget.duration)}
+                onTimeUpdate={event => setPreviewTime(event.currentTarget.currentTime)}
+                onEnded={() => setPreviewTime(0)}
+              />
+              <WaveformPreview
+                audioUrl={mixedAudioUrl}
+                durationSeconds={waveformDuration}
+                currentTime={previewTime}
+                onSeek={seekPreview}
+                markers={query.data?.segments.map(segment => ({
+                  id: segment.id,
+                  startSeconds: Number(segment.startSeconds),
+                  endSeconds: Number(segment.endSeconds),
+                  label: `Dialogue ${segment.sortOrder + 1}`,
+                  detail: segment.tamilText || segment.sourceText,
+                })) ?? []}
+              />
               <div className="mt-4 flex gap-2">
                 <Button asChild><a href={project.finalVideoUrl} download><Download className="mr-2 h-4 w-4" />Download MP4</a></Button>
                 {project.subtitleSrtUrl ? <Button variant="outline" asChild><a href={project.subtitleSrtUrl} download>Download SRT</a></Button> : null}
@@ -148,7 +184,7 @@ export default function LocalizationProjectPage() {
             </>
           ) : <p className="mt-4 rounded-xl bg-muted/40 p-6 text-sm text-muted-foreground">The preview will appear when rendering completes.</p>}
         </section>
-        <section className="rounded-3xl border border-border/70 bg-card p-6">
+        <section className="min-w-0 rounded-3xl border border-border/70 bg-card p-6">
           <h2 className="font-semibold">Localization output</h2>
           <dl className="mt-5 space-y-3 text-sm">
             <Row label="Original duration" value={formatDuration(project.sourceDurationSeconds)} />
