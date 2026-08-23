@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, rm } from "fs/promises";
 import os from "os";
 import path from "path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { storageGetSignedUrl, storagePut } from "./storage";
 import { runFfmpeg, uploadLocalFileToStorage } from "./services/ffmpeg";
 
@@ -32,4 +32,14 @@ describe("processing-output storage", () => {
     expect(response.ok).toBe(true);
     expect((await response.arrayBuffer()).byteLength).toBe(audio.byteLength);
   }, 30_000);
+
+  it("fails safely when signed-URL preparation stalls", async () => {
+    vi.useFakeTimers();
+    const request = vi.fn((_input: string | URL | Request, init?: RequestInit) => new Promise<Response>((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))) as Promise<Response>);
+    const pending = storageGetSignedUrl("projects/120001/tts/segment-1.mp3", request as typeof fetch);
+    const assertion = expect(pending).rejects.toThrow(/timed out preparing a processing-input download/i);
+    await vi.advanceTimersByTimeAsync(20_000);
+    await assertion;
+    vi.useRealTimers();
+  });
 });

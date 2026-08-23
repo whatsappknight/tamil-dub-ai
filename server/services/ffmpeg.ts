@@ -6,6 +6,8 @@ import { pipeline } from "stream/promises";
 import path from "path";
 import { storageCreatePresignedUpload } from "../storage";
 
+const PROCESSING_DOWNLOAD_TIMEOUT_MS = Math.max(5_000, Number(process.env.PROCESSING_DOWNLOAD_TIMEOUT_MS || 30_000));
+
 export async function runProcess(command: string, args: string[]) {
   return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
     const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
@@ -27,11 +29,20 @@ export async function probeDurationSeconds(filePath: string) {
   return duration;
 }
 
-export async function downloadSignedObject(url: string, targetPath: string) {
-  const response = await fetch(url);
-  if (!response.ok || !response.body) throw new Error(`Failed to download processing input (${response.status}).`);
-  await mkdir(path.dirname(targetPath), { recursive: true });
-  await pipeline(Readable.fromWeb(response.body as never), createWriteStream(targetPath));
+export async function downloadSignedObject(url: string, targetPath: string, request: typeof fetch = fetch) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PROCESSING_DOWNLOAD_TIMEOUT_MS);
+  try {
+    const response = await request(url, { signal: controller.signal });
+    if (!response.ok || !response.body) throw new Error(`Failed to download processing input (${response.status}).`);
+    await mkdir(path.dirname(targetPath), { recursive: true });
+    await pipeline(Readable.fromWeb(response.body as never), createWriteStream(targetPath), { signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error("Timed out downloading processing input. Retry the failed stage to resume with saved outputs.");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function uploadLocalFileToStorage(filePath: string, storagePath: string, contentType: string) {

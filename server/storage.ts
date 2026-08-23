@@ -4,6 +4,8 @@
 
 import { ENV } from "./_core/env";
 
+const STORAGE_SIGNED_URL_TIMEOUT_MS = Math.max(5_000, Number(process.env.STORAGE_SIGNED_URL_TIMEOUT_MS || 20_000));
+
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
   const forgeKey = ENV.forgeApiKey;
@@ -103,22 +105,27 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
   return { key, url: `/manus-storage/${key}` };
 }
 
-export async function storageGetSignedUrl(relKey: string): Promise<string> {
+export async function storageGetSignedUrl(relKey: string, request: typeof fetch = fetch): Promise<string> {
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = normalizeKey(relKey);
 
   const getUrl = new URL("v1/storage/presign/get", forgeUrl + "/");
   getUrl.searchParams.set("path", key);
-
-  const resp = await fetch(getUrl, {
-    headers: { Authorization: `Bearer ${forgeKey}` },
-  });
-
-  if (!resp.ok) {
-    const msg = await resp.text().catch(() => resp.statusText);
-    throw new Error(`Storage signed URL failed (${resp.status}): ${msg}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), STORAGE_SIGNED_URL_TIMEOUT_MS);
+  try {
+    const resp = await request(getUrl, { headers: { Authorization: `Bearer ${forgeKey}` }, signal: controller.signal });
+    if (!resp.ok) {
+      const msg = await resp.text().catch(() => resp.statusText);
+      throw new Error(`Storage signed URL failed (${resp.status}): ${msg}`);
+    }
+    const { url } = (await resp.json()) as { url: string };
+    if (!url) throw new Error("Storage service returned an empty signed download URL.");
+    return url;
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error("Timed out preparing a processing-input download. Retry the failed stage to resume with saved outputs.");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const { url } = (await resp.json()) as { url: string };
-  return url;
 }

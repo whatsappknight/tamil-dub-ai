@@ -3,6 +3,7 @@ import { isRetryableStage, stageAtOrAfter } from "../shared/pipeline";
 import { selectTamilTtsProvider, ElevenLabsTamilTtsProvider, GenericOpenAiCompatibleTamilTtsProvider } from "./providers/tts";
 import { buildSrt } from "./services/subtitles";
 import { validateDirectVideoUpload } from "./services/upload-validation";
+import { needsVoiceGeneration } from "./services/pipeline";
 
 describe("TamilDub AI pipeline utilities", () => {
   it("marks media-processing failures as retryable while excluding terminal states", () => { expect(isRetryableStage("rendering_video")).toBe(true); expect(isRetryableStage("completed")).toBe(false); });
@@ -17,5 +18,10 @@ describe("TamilDub AI pipeline utilities", () => {
     expect(selectTamilTtsProvider("elevenlabs")).toBeInstanceOf(ElevenLabsTamilTtsProvider);
     expect(selectTamilTtsProvider("generic-openai")).toBeInstanceOf(GenericOpenAiCompatibleTamilTtsProvider);
     expect(() => selectTamilTtsProvider("unsupported-provider")).toThrow(/Unsupported configured Tamil TTS provider/);
+  });
+  it("skips voiced segments with stored audio when resuming a failed voice stage", () => {
+    expect(needsVoiceGeneration({ status: "voiced", ttsAudioKey: "projects/120001/tts/segment-1.mp3" })).toBe(false);
+    expect(needsVoiceGeneration({ status: "translated", ttsAudioKey: null })).toBe(true);
+    expect(needsVoiceGeneration({ status: "voiced", ttsAudioKey: null })).toBe(true);
   });
 });

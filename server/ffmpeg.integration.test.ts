@@ -1,8 +1,8 @@
 import { mkdtemp, rm, stat } from "fs/promises";
 import os from "os";
 import path from "path";
-import { afterEach, describe, expect, it } from "vitest";
-import { probeDurationSeconds, runFfmpeg } from "./services/ffmpeg";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { downloadSignedObject, probeDurationSeconds, runFfmpeg } from "./services/ffmpeg";
 
 let workDir = "";
 
@@ -23,4 +23,25 @@ describe("FFmpeg TamilDub render path", () => {
     expect(duration).toBeLessThan(1.35);
     expect((await stat(output)).size).toBeGreaterThan(1_000);
   }, 30_000);
+
+  it("fails safely instead of waiting indefinitely for a processing-input download", async () => {
+    vi.useFakeTimers();
+    const request = vi.fn((_url: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))) as Promise<Response>);
+    const pending = downloadSignedObject("https://storage.example.test/audio.mp3", "/tmp/unreachable-audio.mp3", request);
+    const assertion = expect(pending).rejects.toThrow(/timed out downloading processing input/i);
+    await vi.advanceTimersByTimeAsync(30_000);
+    await assertion;
+    vi.useRealTimers();
+  });
+
+  it("aborts a processing-input stream that stalls after response headers", async () => {
+    vi.useFakeTimers();
+    const neverEndingBody = new ReadableStream<Uint8Array>({ start() {} });
+    const request = vi.fn(async () => new Response(neverEndingBody, { status: 200 }));
+    const pending = downloadSignedObject("https://storage.example.test/stalled.mp3", "/tmp/stalled-audio.mp3", request as typeof fetch);
+    const assertion = expect(pending).rejects.toThrow(/timed out downloading processing input/i);
+    await vi.advanceTimersByTimeAsync(30_000);
+    await assertion;
+    vi.useRealTimers();
+  });
 });

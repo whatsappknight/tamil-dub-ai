@@ -23,3 +23,7 @@ export function subtitleForceStyle(style: SubtitleStyle) {
   if (style === "high_contrast") return "FontName=Noto Sans Tamil,FontSize=21,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=0,MarginV=36,Alignment=2";
   return "FontName=Noto Sans Tamil,FontSize=20,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H78000000,BorderStyle=1,Outline=2,Shadow=0,MarginV=34,Alignment=2";
 }
+
+export function buildBurnedSubtitleFilter(srtPath: string, style: SubtitleStyle) {
+  return `subtitles=${srtPath.replaceAll("\\", "\\\\").replaceAll(":", "\\:")}:force_style='${subtitleForceStyle(style)}'`;
+}

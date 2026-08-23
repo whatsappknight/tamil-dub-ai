@@ -36,7 +36,12 @@
 - [x] Add configurable Tamil subtitle appearance controls for burned-in subtitle rendering.
 - [x] Extend the project setup and timeline editor interfaces with the new localization controls and expanded voice-profile choices.
 - [x] Test the enhanced localization rule, subtitle-style, and fallback-selection behavior.
-- [ ] Add a controlled test for an unsupported fallback provider configuration.
-- [ ] Add a render-path regression test that verifies the selected burned-in subtitle style reaches FFmpeg arguments.
-- [ ] Add per-segment pronunciation-hint editing to the timeline editor and persist it through the project update flow.
-- [ ] Add controlled tests for primary Tamil TTS failure, enabled fallback selection, disabled fallback behavior, and unsupported fallback configuration.
+- [x] Add a controlled test for an unsupported fallback provider configuration.
+- [x] Add a true render-stage regression test that verifies the selected burned-in subtitle style reaches FFmpeg arguments.
+- [x] Add per-segment pronunciation-hint editing to the timeline editor and persist it through the project update flow.
+- [ ] Add deterministic tests for primary Tamil TTS failure, enabled fallback selection, disabled fallback behavior, and unsupported fallback configuration.
+- [x] Add preview-only guest access for the project owner while preserving authentication in production deployments.
+- [x] Add bounded Tamil TTS provider request timeouts so quota-exhausted or unresponsive primary providers cannot block fallback routing indefinitely.
+- [x] Make failed voice-stage retries resume from missing Tamil voice segments without regenerating already voiced segments.
+- [x] Add bounded storage-download timeouts and diagnostics so synchronization cannot wait indefinitely on a segment-audio fetch.
+- [ ] Bound signed-URL resolution and report synchronization progress so a stalled storage request fails safely instead of leaving the project in processing indefinitely.
