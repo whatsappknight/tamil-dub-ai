@@ -45,3 +45,9 @@
 - [x] Make failed voice-stage retries resume from missing Tamil voice segments without regenerating already voiced segments.
 - [x] Add bounded storage-download timeouts and diagnostics so synchronization cannot wait indefinitely on a segment-audio fetch.
 - [x] Bound signed-URL resolution and report synchronization progress so a stalled storage request fails safely instead of leaving the project in processing indefinitely.
+- [x] Play and verify the completed Tamil-dubbed video for audio-track presence, timing synchronization, and observable preview quality.
+- [x] Perform explicit start, middle, and end dialogue/subtitle spot checks against the actual 12:54 output to verify synchronization quality across the full runtime.
+- [x] Record deterministic full-runtime playback evidence that confirms the browser can seek and play representative start, middle, and end segments with the Tamil audio track present.
+- [x] Complete full continuity verification for all remaining extended quiet intervals in repaired project 120001, correcting any interval with missing dialogue.
+- [x] Preserve a safely attenuated source-audio bed beneath the Tamil voice track during final mixing so non-dialogue sections do not become silent.
+- [x] Explicitly inspect each remaining extended quiet interval in the repaired MP4 and record whether it is an intentional scene pause or a missing-dialogue defect.

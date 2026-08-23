@@ -2,7 +2,7 @@ import { mkdtemp, rm, stat } from "fs/promises";
 import os from "os";
 import path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { downloadSignedObject, probeDurationSeconds, runFfmpeg } from "./services/ffmpeg";
+import { downloadSignedObject, duckedTamilBackgroundFilter, probeDurationSeconds, runFfmpeg } from "./services/ffmpeg";
 
 let workDir = "";
 
@@ -22,6 +22,16 @@ describe("FFmpeg TamilDub render path", () => {
     expect(duration).toBeGreaterThan(1);
     expect(duration).toBeLessThan(1.35);
     expect((await stat(output)).size).toBeGreaterThan(1_000);
+  }, 30_000);
+
+  it("mixes a ducked source-audio bed under Tamil voice without introducing a silent final track", async () => {
+    workDir = await mkdtemp(path.join(os.tmpdir(), "tamil-dub-background-mix-"));
+    const source = path.join(workDir, "source.mp4"); const voice = path.join(workDir, "tamil.m4a"); const mixed = path.join(workDir, "mixed.m4a");
+    await runFfmpeg(["-f", "lavfi", "-i", "color=c=0x33245f:s=320x180:r=24", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=24000", "-t", "1.25", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", source]);
+    await runFfmpeg(["-f", "lavfi", "-i", "sine=frequency=660:sample_rate=24000", "-t", "1.25", "-c:a", "aac", voice]);
+    await runFfmpeg(["-i", source, "-i", voice, "-filter_complex", duckedTamilBackgroundFilter(), "-map", "[mixed]", "-c:a", "aac", mixed]);
+    expect(await probeDurationSeconds(mixed)).toBeGreaterThan(1);
+    expect((await stat(mixed)).size).toBeGreaterThan(1_000);
   }, 30_000);
 
   it("fails safely instead of waiting indefinitely for a processing-input download", async () => {

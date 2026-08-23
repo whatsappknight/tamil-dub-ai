@@ -29,6 +29,10 @@ export async function probeDurationSeconds(filePath: string) {
   return duration;
 }
 
+export function duckedTamilBackgroundFilter() {
+  return "[0:a]volume=0.18[background];[1:a]volume=1.0,asplit=2[ta_sidechain][ta_mix];[background][ta_sidechain]sidechaincompress=threshold=0.02:ratio=12:attack=20:release=500[ducked];[ducked][ta_mix]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[mixed]";
+}
+
 export async function downloadSignedObject(url: string, targetPath: string, request: typeof fetch = fetch) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PROCESSING_DOWNLOAD_TIMEOUT_MS);
