@@ -65,3 +65,11 @@
 - [x] Add regression coverage for authenticated-user precedence and unauthenticated non-blocking guest fallback in preview mode.
 - [x] Diagnose and eliminate any remaining cold-start delay in unauthenticated development-preview guest resolution while retaining signed-in user precedence.
 - [x] Bound development-preview authenticated-session resolution and fall back safely to the owner guest only when signed-session lookup stalls.
+- [x] Diagnose original-English dialogue bleed beneath Tamil dubbing in project 120001 and measure the current final mix.
+- [x] Update the background-preservation mix so original speech is removed or strongly suppressed while Tamil dubbing and non-speech ambience remain.
+- [x] Regenerate and validate a Tamil-only-dialogue output for project 120001 without regenerating its saved Tamil voice segments.
+- [x] Document representative original-English dialogue bleed in the prior background-preserved output; English remained audible beneath Tamil at 00:17–00:32.
+- [x] Assess a safe ambience-preserving speech-suppression path; retained Tamil-only replacement because the mixed source has no reliable separate dialogue stem and full replacement is the only deterministic no-English option.
+- [x] Validate the current Tamil-only replacement at representative dialogue timestamps and record the final audio-mode outcome; 00:13–00:32 transcribes as Tamil only and final audio is a single 24 kHz mono replacement track.
+- [x] Experiment with an ambience-preserving original-speech suppression approach on project 120001 source audio and document its residual dialogue versus ambience quality; stereo phase cancellation removed speech but reduced average source level from −19.1 dB to −45.7 dB and eliminated usable ambience.
+- [x] Retain Tamil-only replacement because the tested speech-suppression approach does not reliably preserve the background mix while removing English dialogue.
