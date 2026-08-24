@@ -77,3 +77,6 @@
 - [x] Diagnose and repair unintended stalls or gaps during active Tamil speech in completed project 240001.
 - [x] Adjust trimmed Tamil voice duration fitting so short generated speech fills its assigned segment without artificial trailing silence.
 - [x] Verify representative repaired dialogue boundaries by playback and classify remaining low-level intervals as intentional pauses or residual padding.
+- [x] Add Murf AI as an optional Tamil-dubbing provider without replacing the existing Google AI Studio workflow, including secure server-only credentials, provider-job tracking, webhook/status handling, final MP4/SRT ingestion, and regression coverage.
+- [x] Add deterministic tests for Murf status and webhook completion/failure paths, including project and processing-job transitions.
+- [x] Add regression coverage for importing Murf MP4/SRT outputs into storage/media records and exposing their project download fields.

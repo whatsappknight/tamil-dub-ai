@@ -36,9 +36,9 @@ export async function getUserByOpenId(openId: string) {
   return (await db.select().from(users).where(eq(users.openId, openId)).limit(1))[0];
 }
 
-export async function createProjectDraft(input: { userId: number; projectName: string; originalLanguage: string; voiceId: string; voiceStyle: string; terminologyRules: string; pronunciationRules: string; subtitleStyle: "minimal" | "studio" | "high_contrast"; allowVoiceProviderFallback: boolean; preserveBackgroundAudio: boolean; preserveSoundEffects: boolean; generateSubtitles: boolean; burnSubtitles: boolean; createSrt: boolean; copyrightOwnershipConfirmed: true; copyrightResponsibilityConfirmed: true }) {
+export async function createProjectDraft(input: { userId: number; projectName: string; originalLanguage: string; dubbingProvider: "local" | "murf"; voiceId: string; voiceStyle: string; terminologyRules: string; pronunciationRules: string; subtitleStyle: "minimal" | "studio" | "high_contrast"; allowVoiceProviderFallback: boolean; preserveBackgroundAudio: boolean; preserveSoundEffects: boolean; generateSubtitles: boolean; burnSubtitles: boolean; createSrt: boolean; copyrightOwnershipConfirmed: true; copyrightResponsibilityConfirmed: true }) {
   const db = requireDb(await getDb());
-  const values: InsertProject = { userId: input.userId, projectName: input.projectName, originalLanguage: input.originalLanguage, targetLanguage: "Tamil", voiceId: input.voiceId, voiceStyle: input.voiceStyle, terminologyRules: input.terminologyRules || null, pronunciationRules: input.pronunciationRules || null, subtitleStyle: input.subtitleStyle, allowVoiceProviderFallback: input.allowVoiceProviderFallback, preserveBackgroundAudio: input.preserveBackgroundAudio, preserveSoundEffects: input.preserveSoundEffects, generateSubtitles: input.generateSubtitles, burnSubtitles: input.burnSubtitles, createSrt: input.createSrt, copyrightOwnershipConfirmed: input.copyrightOwnershipConfirmed, copyrightResponsibilityConfirmed: input.copyrightResponsibilityConfirmed, status: "draft", currentStage: "uploading", progressPercent: 0, statusMessage: "Draft created.", audioMode: "replace_original" };
+  const values: InsertProject = { userId: input.userId, projectName: input.projectName, originalLanguage: input.originalLanguage, targetLanguage: "Tamil", dubbingProvider: input.dubbingProvider, voiceId: input.voiceId, voiceStyle: input.voiceStyle, terminologyRules: input.terminologyRules || null, pronunciationRules: input.pronunciationRules || null, subtitleStyle: input.subtitleStyle, allowVoiceProviderFallback: input.allowVoiceProviderFallback, preserveBackgroundAudio: input.preserveBackgroundAudio, preserveSoundEffects: input.preserveSoundEffects, generateSubtitles: input.generateSubtitles, burnSubtitles: input.burnSubtitles, createSrt: input.createSrt, copyrightOwnershipConfirmed: input.copyrightOwnershipConfirmed, copyrightResponsibilityConfirmed: input.copyrightResponsibilityConfirmed, status: "draft", currentStage: "uploading", progressPercent: 0, statusMessage: "Draft created.", audioMode: "replace_original" };
   const result = await db.insert(projects).values(values);
   return (await db.select().from(projects).where(eq(projects.id, Number(result[0].insertId))).limit(1))[0]!;
 }
@@ -65,6 +65,11 @@ export async function getProjectForUser(projectId: number, userId: number) {
 export async function getProjectForProcessing(projectId: number) {
   const db = requireDb(await getDb());
   return (await db.select().from(projects).where(eq(projects.id, projectId)).limit(1))[0];
+}
+
+export async function getProjectForMurfJob(murfJobId: string) {
+  const db = requireDb(await getDb());
+  return (await db.select().from(projects).where(eq(projects.murfJobId, murfJobId)).limit(1))[0];
 }
 
 export async function listProjectsForUser(userId: number) {
@@ -111,6 +116,7 @@ export async function createProcessingJob(input: { projectId: number; stage: Pip
 }
 
 export async function updateProcessingJob(jobId: number, patch: Partial<InsertProcessingJob>) { const db = requireDb(await getDb()); await db.update(processingJobs).set(patch).where(eq(processingJobs.id, jobId)); }
+export async function getLatestProcessingJob(projectId: number, stage: PipelineStage) { const db = requireDb(await getDb()); return (await db.select().from(processingJobs).where(and(eq(processingJobs.projectId, projectId), eq(processingJobs.stage, stage))).orderBy(desc(processingJobs.createdAt)).limit(1))[0]; }
 export async function getProjectSegments(projectId: number) { const db = requireDb(await getDb()); return db.select().from(projectSegments).where(eq(projectSegments.projectId, projectId)).orderBy(projectSegments.sortOrder); }
 export async function getProjectSegment(segmentId: number) { const db = requireDb(await getDb()); return (await db.select().from(projectSegments).where(eq(projectSegments.id, segmentId)).limit(1))[0]; }
 

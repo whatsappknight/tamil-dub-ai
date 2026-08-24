@@ -22,6 +22,13 @@
       "when": 1787466150776,
       "tag": "0002_hard_zombie",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1787580995012,
+      "tag": "0003_brave_rage",
+      "breakpoints": true
     }
   ]
 }

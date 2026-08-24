@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "81fa5c8a-99cf-4e18-a3c6-b37346a9796e",
-  "prevId": "835d79a4-cd16-49cd-9cf9-2ebe627bb1e7",
+  "id": "70ddb6d3-92a0-4545-9de0-323aa41a95da",
+  "prevId": "81fa5c8a-99cf-4e18-a3c6-b37346a9796e",
   "tables": {
     "mediaFiles": {
       "name": "mediaFiles",
@@ -443,6 +443,28 @@
           "autoincrement": false,
           "default": "'Tamil'"
         },
+        "dubbingProvider": {
+          "name": "dubbingProvider",
+          "type": "enum('local','murf')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'local'"
+        },
+        "murfJobId": {
+          "name": "murfJobId",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "murfStatus": {
+          "name": "murfStatus",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "voiceId": {
           "name": "voiceId",
           "type": "varchar(48)",
@@ -456,14 +478,6 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "exportPreset": {
-          "name": "exportPreset",
-          "type": "enum('source','youtube','shorts','whatsapp')",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'source'"
         },
         "terminologyRules": {
           "name": "terminologyRules",

@@ -65,6 +65,10 @@ export default function LocalizationProjectPage() {
       await utils.projects.get.invalidate({ projectId });
     },
   });
+  const refreshMurf = trpc.projects.refreshMurfStatus.useMutation({
+    onSuccess: refresh,
+    onError: error => toast.error(error.message || "Murf status could not be refreshed."),
+  });
   const regenerate = trpc.projects.regenerateSegment.useMutation({
     onSuccess: () => {
       toast.success("Voice regeneration has started.");
@@ -86,6 +90,12 @@ export default function LocalizationProjectPage() {
     const timer = window.setInterval(refresh, 3000);
     return () => window.clearInterval(timer);
   }, [project?.status, refresh]);
+
+  useEffect(() => {
+    if (!project || project.dubbingProvider !== "murf" || !["queued", "processing"].includes(project.status)) return;
+    const timer = window.setTimeout(() => refreshMurf.mutate({ projectId }), 8_000);
+    return () => window.clearTimeout(timer);
+  }, [project?.dubbingProvider, project?.status, projectId, refreshMurf]);
 
   const waveformDuration = previewDuration ?? project?.outputDurationSeconds ?? project?.sourceDurationSeconds ?? 0;
   const mixedAudioUrl = query.data?.files.find(file => file.role === "mixed_audio")?.url ?? project?.finalVideoUrl;
@@ -156,6 +166,11 @@ export default function LocalizationProjectPage() {
             {retry.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
             {retry.isPending ? "Retrying failed stage…" : "Retry failed stage"}
           </Button>
+        ) : project.status === "processing" && project.dubbingProvider === "murf" ? (
+          <Button type="button" className="min-w-48 gap-2" onClick={() => refreshMurf.mutate({ projectId })} disabled={refreshMurf.isPending}>
+            {refreshMurf.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+            {refreshMurf.isPending ? "Checking Murf status…" : "Refresh Murf status"}
+          </Button>
         ) : project.status === "processing" ? (
           <Button
             type="button"
@@ -225,14 +240,13 @@ export default function LocalizationProjectPage() {
           <dl className="mt-5 space-y-3 text-sm">
             <Row label="Original duration" value={formatDuration(project.sourceDurationSeconds)} />
             <Row label="Tamil output duration" value={formatDuration(project.outputDurationSeconds)} />
-            <Row label="Tamil voice" value={`${project.voiceId} · ${project.voiceStyle}`} />
-            <Row label="Subtitle style" value={project.subtitleStyle.replace("_", " ")} />
-            <Row label="Fallback voice" value={project.allowVoiceProviderFallback ? "Allowed when configured" : "Disabled"} />
+            <Row label="Dubbing engine" value={project.dubbingProvider === "murf" ? "Murf AI managed dub" : "Standard TamilDub"} />
+            {project.dubbingProvider === "murf" ? <Row label="Provider status" value={project.murfStatus || "Preparing"} /> : <><Row label="Tamil voice" value={`${project.voiceId} · ${project.voiceStyle}`} /><Row label="Subtitle style" value={project.subtitleStyle.replace("_", " ")} /><Row label="Fallback voice" value={project.allowVoiceProviderFallback ? "Allowed when configured" : "Disabled"} /></>}
           </dl>
         </section>
       </div>
 
-      <section className="overflow-hidden rounded-3xl border border-border/70 bg-card">
+      {project.dubbingProvider === "murf" ? <section className="rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-6"><h2 className="font-semibold">Murf AI managed output</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Murf AI manages translation, Tamil voice selection, and synchronization for this project. TamilDub AI securely imports the completed MP4 and SRT here. Create a Standard TamilDub project when you need local per-segment editing or voice regeneration.</p></section> : <section className="overflow-hidden rounded-3xl border border-border/70 bg-card">
         <div className="border-b border-border/70 p-6">
           <h2 className="font-semibold">Timeline translation editor</h2>
           <p className="mt-1 text-sm text-muted-foreground">Edit Tamil wording, voice, timing, and a specific pronunciation hint for each segment.</p>
@@ -275,7 +289,7 @@ export default function LocalizationProjectPage() {
             ))}
           </div>
         ) : <div className="p-10 text-center text-sm text-muted-foreground"><FileText className="mx-auto mb-3 h-6 w-6 text-violet-400" />Transcript segments will appear here after transcription completes.</div>}
-      </section>
+      </section>}
     </div>
   );
 }
