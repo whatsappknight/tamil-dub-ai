@@ -10,7 +10,7 @@ import { synthesizeTamilVoice, tamilTtsProvider } from "../providers/tts";
 import { storageGetSignedUrl, storagePut } from "../storage";
 import { buildSrt } from "./subtitles";
 import { applyPronunciationRules, buildBurnedSubtitleFilter, parseLocalizationRules } from "./localization";
-import { downloadSignedObject, duckedTamilBackgroundFilter, probeDurationSeconds, runFfmpeg, uploadLocalFileToStorage } from "./ffmpeg";
+import { downloadSignedObject, duckedTamilBackgroundFilter, probeDurationSeconds, runFfmpeg, trimTamilTtsEdgeSilenceFilter, uploadLocalFileToStorage } from "./ffmpeg";
 
 function shouldRun(start: PipelineStage, stage: PipelineStage) { return !stageAtOrAfter(start, stage) || start === stage; }
 async function startStage(projectId: number, stage: PipelineStage, message: string) { const job = await createProcessingJob({ projectId, stage, message }); await updateProject(projectId, { status: "processing", currentStage: stage, progressPercent: STAGE_PROGRESS[stage], statusMessage: message, lastError: null }); return job; }
@@ -33,10 +33,14 @@ async function chunkAudio(audioPath: string, workDir: string) {
   return chunks;
 }
 async function silentAudio(target: string, seconds: number) { await runFfmpeg(["-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", Math.max(seconds, 0.02).toFixed(3), "-c:a", "pcm_s16le", target]); }
+export function tamilVoiceTempoForTarget(originalSeconds: number, targetSeconds: number, speed: number) { return Math.min(2, Math.max(0.25, (originalSeconds / Math.max(targetSeconds, 0.25)) * speed)); }
+export function tamilVoiceAtempoFilter(tempo: number) { let remaining = Math.min(2, Math.max(0.25, tempo)); const filters: string[] = []; while (remaining < 0.5) { filters.push("atempo=0.5"); remaining /= 0.5; } while (remaining > 2) { filters.push("atempo=2"); remaining /= 2; } filters.push(`atempo=${remaining.toFixed(3)}`); return filters.join(","); }
 async function timedAudio(source: string, target: string, seconds: number, speed: number) {
-  const original = await probeDurationSeconds(source);
-  const tempo = Math.min(1.18, Math.max(0.85, (original / Math.max(seconds, 0.25)) * speed));
-  await runFfmpeg(["-i", source, "-filter:a", `atempo=${tempo.toFixed(3)},apad=pad_dur=${Math.max(seconds, 0.25).toFixed(3)},atrim=duration=${Math.max(seconds, 0.25).toFixed(3)},aresample=24000`, "-ac", "1", "-c:a", "pcm_s16le", target]);
+  const trimmed = `${target}.trimmed.wav`;
+  await runFfmpeg(["-i", source, "-af", trimTamilTtsEdgeSilenceFilter(), "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le", trimmed]);
+  const original = await probeDurationSeconds(trimmed);
+  const tempo = tamilVoiceTempoForTarget(original, seconds, speed);
+  await runFfmpeg(["-i", trimmed, "-filter:a", `${tamilVoiceAtempoFilter(tempo)},apad=pad_dur=${Math.max(seconds, 0.25).toFixed(3)},atrim=duration=${Math.max(seconds, 0.25).toFixed(3)},aresample=24000`, "-ac", "1", "-c:a", "pcm_s16le", target]);
 }
 async function voiceTrack(projectId: number, duration: number, workDir: string) {
   const segments = await getProjectSegments(projectId);

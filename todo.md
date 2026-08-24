@@ -73,3 +73,7 @@
 - [x] Add regression coverage for authenticated-user precedence and unauthenticated non-blocking guest fallback in preview mode.
 - [x] Diagnose and eliminate any remaining cold-start delay in unauthenticated development-preview guest resolution while retaining signed-in user precedence.
 - [x] Bound development-preview authenticated-session resolution and fall back safely to the owner guest only when signed-session lookup stalls.
+- [x] Research and compare Suno, Udio, Descript, Murf AI, and related tools for Tamil translation and video dubbing.
+- [x] Diagnose and repair unintended stalls or gaps during active Tamil speech in completed project 240001.
+- [x] Adjust trimmed Tamil voice duration fitting so short generated speech fills its assigned segment without artificial trailing silence.
+- [x] Verify representative repaired dialogue boundaries by playback and classify remaining low-level intervals as intentional pauses or residual padding.
