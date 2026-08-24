@@ -12,5 +12,9 @@ describe("Localization project retry control", () => {
     expect(page).toContain("retry.mutate({ projectId })");
     expect(page).toContain("disabled={retry.isPending}");
     expect(page).toContain('aria-live="polite"');
+    expect(page).toContain('data-testid="resume-interrupted-stage"');
+    expect(page).toContain("onClick={resumeInterruptedStage}");
+    expect(page).toContain("resumeInterrupted.mutate({ projectId })");
+    expect(page).toContain("disabled={resumeInterrupted.isPending}");
   });
 });

@@ -50,6 +50,21 @@ export default function LocalizationProjectPage() {
       await utils.projects.get.invalidate({ projectId });
     },
   });
+  const resumeInterrupted = trpc.projects.resumeInterrupted.useMutation({
+    onMutate: () => {
+      setRetryNotice("Resuming interrupted stage…");
+    },
+    onSuccess: async () => {
+      setRetryNotice("Resume accepted. Processing will continue shortly.");
+      toast.success("Interrupted stage is resuming.");
+      await utils.projects.get.invalidate({ projectId });
+    },
+    onError: async error => {
+      setRetryNotice(null);
+      toast.error(error.message || "The interrupted stage could not be resumed.");
+      await utils.projects.get.invalidate({ projectId });
+    },
+  });
   const regenerate = trpc.projects.regenerateSegment.useMutation({
     onSuccess: () => {
       toast.success("Voice regeneration has started.");
@@ -108,6 +123,15 @@ export default function LocalizationProjectPage() {
     retry.mutate({ projectId });
   }
 
+  function resumeInterruptedStage() {
+    if (!canLoadProject) {
+      toast.error("This project link is invalid. Return to the project library and open the project again.");
+      return;
+    }
+    setRetryNotice("Resuming interrupted stage…");
+    resumeInterrupted.mutate({ projectId });
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-12">
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -131,6 +155,18 @@ export default function LocalizationProjectPage() {
           >
             {retry.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
             {retry.isPending ? "Retrying failed stage…" : "Retry failed stage"}
+          </Button>
+        ) : project.status === "processing" ? (
+          <Button
+            type="button"
+            data-testid="resume-interrupted-stage"
+            className="min-w-48 gap-2"
+            onClick={resumeInterruptedStage}
+            disabled={resumeInterrupted.isPending}
+            aria-describedby="retry-stage-status"
+          >
+            {resumeInterrupted.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+            {resumeInterrupted.isPending ? "Resuming stage…" : "Resume interrupted stage"}
           </Button>
         ) : null}
       </header>

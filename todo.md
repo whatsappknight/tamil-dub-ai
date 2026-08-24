@@ -60,6 +60,14 @@
 - [x] Interact with a dialogue marker and waveform seek control in a narrow viewport to verify touch usability and layout stability.
 - [x] Perform a narrow-viewport interaction on the waveform seek surface and a touch-sized dialogue chip, then confirm the synchronized playhead state.
 - [x] Perform a true narrow-viewport browser interaction on the waveform seek surface and mobile dialogue chip, then confirm stable synchronized playback state.
+- [x] Diagnose the queued generating-voice project and recover missing Tamil voice generation through Google AI Studio fallback when available.
+- [x] Make Google AI Studio the direct configured Tamil TTS provider for the resumed missing segments and validate the setting.
+- [x] Handle Google AI Studio rate limits safely and resume project 240001 from its 11 completed Tamil voice segments when provider capacity returns.
+- [x] Validate a replacement authorized Google AI Studio credential and resume project 240001 without regenerating its completed segments.
+- [x] Add and validate an authorized resume path for projects left in processing state after an in-process worker interruption.
+- [x] Hard-bound Google TTS retry and response-body processing so rate-limited final segments fail safely instead of remaining indefinitely processing.
+- [x] Validate the user-supplied backup Google AI Studio credential and complete project 240001 through primary-to-backup failover for its final missing Tamil segment.
+- [x] Store the user-supplied Google AI Studio credential as a backup and use it only after primary Google voice failures.
 - [x] Restore development-preview project loading by ensuring enabled guest mode does not wait on an external authentication request.
 - [x] Preserve signed-in user precedence in development preview while using guest fallback only when no session is present.
 - [x] Add regression coverage for authenticated-user precedence and unauthenticated non-blocking guest fallback in preview mode.

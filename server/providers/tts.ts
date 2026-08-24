@@ -8,7 +8,13 @@ const GOOGLE_VOICES: Record<string, string> = { "male-1": "Charon", "male-2": "O
 type ProviderConfig = { endpoint: string; apiKey: string; model?: string };
 export type GoogleAiStudioConfig = { apiKey: string; model?: string };
 type FetchRequest = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+type Pause = (milliseconds: number) => Promise<void>;
 const TTS_REQUEST_TIMEOUT_MS = Math.max(5_000, Number(process.env.TTS_REQUEST_TIMEOUT_MS || 25_000));
+const GOOGLE_RATE_LIMIT_RETRY_MS = Math.max(1_000, Number(process.env.GOOGLE_AI_STUDIO_RATE_LIMIT_RETRY_MS || 15_000));
+const GOOGLE_RATE_LIMIT_MAX_RETRIES = Math.max(0, Number(process.env.GOOGLE_AI_STUDIO_RATE_LIMIT_MAX_RETRIES || 2));
+const GOOGLE_TTS_TOTAL_TIMEOUT_MS = Math.max(TTS_REQUEST_TIMEOUT_MS, Number(process.env.GOOGLE_AI_STUDIO_TOTAL_TIMEOUT_MS || 90_000));
+
+function pause(milliseconds: number) { return new Promise<void>(resolve => setTimeout(resolve, milliseconds)); }
 
 export async function requestVoiceWithTimeout(request: FetchRequest, input: string | URL | Request, init: RequestInit) {
   const controller = new AbortController();
@@ -23,10 +29,37 @@ export async function requestVoiceWithTimeout(request: FetchRequest, input: stri
   }
 }
 
+export async function requestGoogleVoiceWithRetry(request: FetchRequest, input: string | URL | Request, init: RequestInit, wait: Pause = pause, maxRetries = GOOGLE_RATE_LIMIT_MAX_RETRIES) {
+  const deadline = Date.now() + GOOGLE_TTS_TOTAL_TIMEOUT_MS;
+  for (let attempt = 0; ; attempt += 1) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw new Error("Google AI Studio Tamil voice request exceeded its safe time limit. Retry the failed voice stage.");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Math.min(TTS_REQUEST_TIMEOUT_MS, remaining));
+    try {
+      const response = await request(input, { ...init, signal: controller.signal });
+      const rawBody = await response.text();
+      let payload: unknown = undefined;
+      try { payload = rawBody ? JSON.parse(rawBody) : undefined; } catch { payload = undefined; }
+      if (response.status !== 429 || attempt >= maxRetries) return { response, payload };
+      const retryDelay = Math.min(GOOGLE_RATE_LIMIT_RETRY_MS * (attempt + 1), Math.max(0, deadline - Date.now()));
+      if (!retryDelay) return { response, payload };
+      await wait(retryDelay);
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error("Google AI Studio Tamil voice request exceeded its safe time limit. Retry the failed voice stage.");
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+}
+
 function requireTtsConfig(): ProviderConfig { const endpoint = process.env.TTS_API_URL; const apiKey = process.env.TTS_API_KEY; if (!endpoint || !apiKey) throw new Error("Tamil TTS is not configured. Add TTS_API_URL and TTS_API_KEY in managed environment settings before processing."); return { endpoint, apiKey, model: process.env.TTS_MODEL }; }
 function genericFallbackConfig(): ProviderConfig { const endpoint = process.env.TTS_FALLBACK_API_URL; const apiKey = process.env.TTS_FALLBACK_API_KEY; if (!endpoint || !apiKey) throw new Error("No generic fallback Tamil TTS provider is configured."); return { endpoint, apiKey, model: process.env.TTS_FALLBACK_MODEL }; }
 function backupElevenLabsConfig(): ProviderConfig { const endpoint = process.env.TTS_API_URL; const apiKey = process.env.TTS_BACKUP_API_KEY; if (!endpoint || !apiKey) throw new Error("No backup ElevenLabs credential is configured."); return { endpoint, apiKey, model: process.env.TTS_BACKUP_MODEL || process.env.TTS_MODEL }; }
 function googleAiStudioConfig(): GoogleAiStudioConfig { const apiKey = process.env.GOOGLE_AI_STUDIO_API_KEY; if (!apiKey) throw new Error("Google AI Studio Tamil voice fallback is not configured."); return { apiKey, model: process.env.GOOGLE_AI_STUDIO_TTS_MODEL || GOOGLE_DEFAULT_MODEL }; }
+export function googleAiStudioBackupConfigured() { return Boolean(process.env.GOOGLE_AI_STUDIO_BACKUP_API_KEY); }
+export function googleAiStudioFallbackConfig(): GoogleAiStudioConfig { if (process.env.TTS_PROVIDER === "google-ai-studio" && googleAiStudioBackupConfigured()) return { apiKey: process.env.GOOGLE_AI_STUDIO_BACKUP_API_KEY!, model: process.env.GOOGLE_AI_STUDIO_TTS_MODEL || GOOGLE_DEFAULT_MODEL }; return googleAiStudioConfig(); }
 
 function elevenLabsVoiceSettings(style: string) { const settings: Record<string, { stability: number; similarity_boost: number; style: number }> = { natural: { stability: 0.45, similarity_boost: 0.72, style: 0.15 }, professional: { stability: 0.7, similarity_boost: 0.78, style: 0.08 }, friendly: { stability: 0.4, similarity_boost: 0.7, style: 0.3 }, documentary: { stability: 0.75, similarity_boost: 0.76, style: 0.05 }, energetic: { stability: 0.32, similarity_boost: 0.72, style: 0.5 } }; return settings[style] || settings.natural; }
 function elevenLabsEndpointForVoice(endpoint: string, voice: string) { const configuredVoiceId = process.env[VOICE_ENV_KEYS[voice] || ""]; if (!configuredVoiceId) return endpoint; const url = new URL(endpoint); url.pathname = url.pathname.replace(/\/text-to-speech\/[^/]+$/, `/text-to-speech/${configuredVoiceId}`); return url.toString(); }
@@ -63,13 +96,13 @@ function googleFailureMessage(status: number) { if (status === 401 || status ===
 
 export class ElevenLabsTamilTtsProvider implements TamilTtsProvider { constructor(private config?: ProviderConfig) {} async synthesize(input: { text: string; voice: string; style: string; speed: number }) { const config = this.config || requireTtsConfig(); const response = await requestVoiceWithTimeout(fetch, elevenLabsEndpointForVoice(config.endpoint, input.voice), { method: "POST", headers: { "xi-api-key": config.apiKey, "Content-Type": "application/json", Accept: "audio/mpeg" }, body: JSON.stringify({ text: input.text, model_id: config.model || "eleven_multilingual_v2", voice_settings: elevenLabsVoiceSettings(input.style), output_format: "mp3_44100_128" }) }); if (!response.ok) throw new Error(elevenLabsFailureMessage(response.status, await response.text().catch(() => response.statusText))); return { audio: Buffer.from(await response.arrayBuffer()), contentType: response.headers.get("content-type") || "audio/mpeg", extension: "mp3" as const }; } }
 
-export class GoogleAiStudioTamilTtsProvider implements TamilTtsProvider { constructor(private config?: GoogleAiStudioConfig, private request: FetchRequest = fetch) {} async synthesize(input: { text: string; voice: string; style: string; speed: number }) { const config = this.config || googleAiStudioConfig(); const response = await requestVoiceWithTimeout(this.request, GOOGLE_INTERACTIONS_URL, { method: "POST", headers: { "x-goog-api-key": config.apiKey, "Content-Type": "application/json" }, body: JSON.stringify({ model: config.model || GOOGLE_DEFAULT_MODEL, input: googlePrompt(input), response_format: { type: "audio" }, generation_config: { speech_config: [{ voice: GOOGLE_VOICES[input.voice] || "Kore", language: "ta" }] }, store: false }) }); if (!response.ok) throw new Error(googleFailureMessage(response.status)); const audioData = extractGoogleAudioData(await response.json()); if (!audioData) throw new Error("Google AI Studio did not return Tamil voice audio. Retry the failed voice stage."); return { audio: pcm16Mono24kToWav(Buffer.from(audioData, "base64")), contentType: "audio/wav", extension: "wav" as const }; } }
+export class GoogleAiStudioTamilTtsProvider implements TamilTtsProvider { constructor(private config?: GoogleAiStudioConfig, private request: FetchRequest = fetch, private wait: Pause = pause) {} async synthesize(input: { text: string; voice: string; style: string; speed: number }) { const config = this.config || googleAiStudioConfig(); const { response, payload } = await requestGoogleVoiceWithRetry(this.request, GOOGLE_INTERACTIONS_URL, { method: "POST", headers: { "x-goog-api-key": config.apiKey, "Content-Type": "application/json" }, body: JSON.stringify({ model: config.model || GOOGLE_DEFAULT_MODEL, input: googlePrompt(input), response_format: { type: "audio" }, generation_config: { speech_config: [{ voice: GOOGLE_VOICES[input.voice] || "Kore", language: "ta" }] }, store: false }) }, this.wait); if (!response.ok) throw new Error(googleFailureMessage(response.status)); const audioData = extractGoogleAudioData(payload); if (!audioData) throw new Error("Google AI Studio did not return Tamil voice audio. Retry the failed voice stage."); return { audio: pcm16Mono24kToWav(Buffer.from(audioData, "base64")), contentType: "audio/wav", extension: "wav" as const }; } }
 
 export class GenericOpenAiCompatibleTamilTtsProvider implements TamilTtsProvider { constructor(private config?: ProviderConfig) {} async synthesize(input: { text: string; voice: string; style: string; speed: number }) { const config = this.config || requireTtsConfig(); const response = await requestVoiceWithTimeout(fetch, config.endpoint, { method: "POST", headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: config.model, input: input.text, voice: process.env[VOICE_ENV_KEYS[input.voice]] || input.voice, speed: input.speed, response_format: "mp3", language: "ta", style: input.style }) }); if (!response.ok) throw new Error(`Tamil TTS provider failed (${response.status}). Check the configured provider and retry the failed voice stage.`); return { audio: Buffer.from(await response.arrayBuffer()), contentType: response.headers.get("content-type") || "audio/mpeg", extension: "mp3" as const }; } }
 
 export function selectTamilTtsProvider(provider = process.env.TTS_PROVIDER || "generic-openai"): TamilTtsProvider { if (provider === "elevenlabs") return new ElevenLabsTamilTtsProvider(); if (provider === "google-ai-studio") return new GoogleAiStudioTamilTtsProvider(); if (provider === "generic-openai") return new GenericOpenAiCompatibleTamilTtsProvider(); throw new Error(`Unsupported configured Tamil TTS provider: ${provider}`); }
 export function backupElevenLabsConfigured() { return Boolean(process.env.TTS_PROVIDER === "elevenlabs" && process.env.TTS_API_URL && process.env.TTS_BACKUP_API_KEY); }
 export function voiceFallbackConfigured() { return process.env.TTS_FALLBACK_PROVIDER === "google-ai-studio" ? Boolean(process.env.GOOGLE_AI_STUDIO_API_KEY) : Boolean(process.env.TTS_FALLBACK_PROVIDER === "generic-openai" && process.env.TTS_FALLBACK_API_URL && process.env.TTS_FALLBACK_API_KEY); }
-function configuredFallbackProvider(): TamilTtsProvider { if (process.env.TTS_FALLBACK_PROVIDER === "google-ai-studio") return new GoogleAiStudioTamilTtsProvider(); if (process.env.TTS_FALLBACK_PROVIDER === "generic-openai") return new GenericOpenAiCompatibleTamilTtsProvider(genericFallbackConfig()); throw new Error("A fallback provider is configured but unsupported. Set TTS_FALLBACK_PROVIDER to google-ai-studio or generic-openai, or disable fallback."); }
+function configuredFallbackProvider(): TamilTtsProvider { if (process.env.TTS_FALLBACK_PROVIDER === "google-ai-studio") return new GoogleAiStudioTamilTtsProvider(googleAiStudioFallbackConfig()); if (process.env.TTS_FALLBACK_PROVIDER === "generic-openai") return new GenericOpenAiCompatibleTamilTtsProvider(genericFallbackConfig()); throw new Error("A fallback provider is configured but unsupported. Set TTS_FALLBACK_PROVIDER to google-ai-studio or generic-openai, or disable fallback."); }
 export async function synthesizeTamilVoice(input: { text: string; voice: string; style: string; speed: number }, allowFallback: boolean, providers?: { primary?: () => TamilTtsProvider; elevenLabsBackup?: () => TamilTtsProvider; fallback?: () => TamilTtsProvider }) { try { return await (providers?.primary?.() || selectTamilTtsProvider()).synthesize(input); } catch (primaryError) { if (!allowFallback) throw primaryError; if (backupElevenLabsConfigured()) { try { return await (providers?.elevenLabsBackup?.() || new ElevenLabsTamilTtsProvider(backupElevenLabsConfig())).synthesize(input); } catch { /* proceed to configured tertiary fallback */ } } if (!voiceFallbackConfigured()) throw primaryError; try { return await (providers?.fallback?.() || configuredFallbackProvider()).synthesize(input); } catch { throw primaryError; } } }
 export const tamilTtsProvider: TamilTtsProvider = { synthesize: input => selectTamilTtsProvider().synthesize(input) };

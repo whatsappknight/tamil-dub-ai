@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { elevenLabsFailureMessage, requestVoiceWithTimeout, synthesizeTamilVoice } from "./providers/tts";
+import { elevenLabsFailureMessage, googleAiStudioBackupConfigured, googleAiStudioFallbackConfig, GoogleAiStudioTamilTtsProvider, requestVoiceWithTimeout, synthesizeTamilVoice } from "./providers/tts";
 
 describe("ElevenLabs Tamil TTS error guidance", () => {
   it("turns quota exhaustion into safe retry guidance without provider metadata", () => {
@@ -30,6 +30,16 @@ describe("ElevenLabs Tamil TTS error guidance", () => {
     vi.unstubAllEnvs();
   });
 
+  it("selects a distinct Google backup credential when Google is the direct provider", () => {
+    vi.stubEnv("TTS_PROVIDER", "google-ai-studio");
+    vi.stubEnv("GOOGLE_AI_STUDIO_API_KEY", "primary-google-test-key");
+    vi.stubEnv("GOOGLE_AI_STUDIO_BACKUP_API_KEY", "backup-google-test-key");
+
+    expect(googleAiStudioBackupConfigured()).toBe(true);
+    expect(googleAiStudioFallbackConfig().apiKey).toBe("backup-google-test-key");
+    vi.unstubAllEnvs();
+  });
+
   it("does not invoke any fallback when the project disables fallback", async () => {
     const fallback = vi.fn(() => ({ synthesize: async () => ({ audio: Buffer.from("fallback"), contentType: "audio/mpeg", extension: "mp3" as const }) }));
     await expect(synthesizeTamilVoice({ text: "வணக்கம்", voice: "female-1", style: "natural", speed: 1 }, false, { primary: () => ({ synthesize: async () => { throw new Error("primary failed"); } }), fallback })).rejects.toThrow("primary failed");
@@ -52,5 +62,20 @@ describe("ElevenLabs Tamil TTS error guidance", () => {
     await vi.advanceTimersByTimeAsync(25_000);
     await timeoutAssertion;
     vi.useRealTimers();
+  });
+
+  it("retries a temporary Google rate limit before returning Tamil WAV audio", async () => {
+    const request = vi.fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ audio: { data: Buffer.from("pcm").toString("base64") } }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    const wait = vi.fn().mockResolvedValue(undefined);
+    const provider = new GoogleAiStudioTamilTtsProvider({ apiKey: "test-key" }, request, wait);
+
+    const result = await provider.synthesize({ text: "வணக்கம்", voice: "female-1", style: "natural", speed: 1 });
+
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledTimes(1);
+    expect(result.contentType).toBe("audio/wav");
+    expect(result.audio.subarray(0, 4).toString("ascii")).toBe("RIFF");
   });
 });
