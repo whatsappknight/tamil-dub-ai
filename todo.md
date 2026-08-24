@@ -80,3 +80,6 @@
 - [x] Add Murf AI as an optional Tamil-dubbing provider without replacing the existing Google AI Studio workflow, including secure server-only credentials, provider-job tracking, webhook/status handling, final MP4/SRT ingestion, and regression coverage.
 - [x] Add deterministic tests for Murf status and webhook completion/failure paths, including project and processing-job transitions.
 - [x] Add regression coverage for importing Murf MP4/SRT outputs into storage/media records and exposing their project download fields.
+- [ ] Extend Google TTS reliability to support one verified paid primary project and up to two verified paid backup projects, using failover only for genuine provider failures and validating every credential server-side.
+- [ ] Add a compliant split-process-combine workflow for one authorized long video, preserving clean batch boundaries, normal provider scheduling, and final single-MP4 assembly without multi-account quota distribution.
+- [x] Prepare a documented local open-source Tamil TTS setup using an AI4Bharat model for long voiceovers without external API quotas, including hardware, installation, and TamilDub AI workflow guidance.
