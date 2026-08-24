@@ -123,4 +123,3 @@ export async function replaceProjectSegments(projectId: number, segments: Array<
 }
 
 export async function updateProjectSegment(segmentId: number, patch: Partial<InsertProjectSegment>) { const db = requireDb(await getDb()); await db.update(projectSegments).set(patch).where(eq(projectSegments.id, segmentId)); }
-export async function updateSegmentsForSpeaker(projectId: number, speaker: string, patch: Partial<InsertProjectSegment>) { const db = requireDb(await getDb()); await db.update(projectSegments).set(patch).where(and(eq(projectSegments.projectId, projectId), eq(projectSegments.speaker, speaker))); }

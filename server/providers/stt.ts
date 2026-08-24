@@ -1,8 +1,6 @@
 import { transcribeAudio } from "../_core/voiceTranscription";
 import type { SpeechToTextProvider } from "./types";
 
-export const DEFAULT_SPEAKER_LABEL = "Speaker 1";
-
 export class BuiltInWhisperSpeechToTextProvider implements SpeechToTextProvider {
   async transcribe(input: { audioUrl: string; languageHint?: string; offsetSeconds?: number }) {
     const result = await transcribeAudio({
@@ -18,7 +16,7 @@ export class BuiltInWhisperSpeechToTextProvider implements SpeechToTextProvider 
         startSeconds: Number(segment.start ?? 0) + offset,
         endSeconds: Number(segment.end ?? 0) + offset,
         text: String(segment.text ?? "").trim(),
-        speaker: DEFAULT_SPEAKER_LABEL,
+        speaker: null,
       })).filter(segment => segment.text.length > 0),
     };
   }

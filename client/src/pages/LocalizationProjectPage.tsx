@@ -7,14 +7,13 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate, formatDuration, stageLabel } from "@/lib/format";
 import { trpc } from "@/lib/trpc";
-import { Download, FileText, Loader2, Pencil, RefreshCcw, RotateCw, Save, Users, Video, Volume2 } from "lucide-react";
+import { Download, FileText, Loader2, Pencil, RefreshCcw, RotateCw, Save, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLocation, useRoute } from "wouter";
 
 const voices = ["male-1", "male-2", "female-1", "female-2", "narrator", "youth"] as const;
-const styles = ["natural", "professional", "friendly", "documentary", "energetic", "cinematic", "conversational", "dramatic"] as const;
-const exportPresets = [{ id: "source", label: "Source" }, { id: "youtube", label: "YouTube" }, { id: "shorts", label: "Shorts / Reels" }, { id: "whatsapp", label: "WhatsApp" }] as const;
+const styles = ["natural", "professional", "friendly", "documentary", "energetic"] as const;
 
 export default function LocalizationProjectPage() {
   const [, params] = useRoute("/projects/:projectId");
@@ -26,7 +25,6 @@ export default function LocalizationProjectPage() {
   const project = query.data?.project;
   const [editing, setEditing] = useState<number | null>(null);
   const [tamilText, setTamilText] = useState("");
-  const [speaker, setSpeaker] = useState("Speaker 1");
   const [pronunciationHint, setPronunciationHint] = useState("");
   const [voiceId, setVoiceId] = useState<typeof voices[number]>("female-1");
   const [voiceStyle, setVoiceStyle] = useState<typeof styles[number]>("natural");
@@ -67,8 +65,6 @@ export default function LocalizationProjectPage() {
     },
     onError: error => toast.error(error.message),
   });
-  const applySpeakerVoice = trpc.projects.applySpeakerVoice.useMutation({ onSuccess: () => { toast.success("Updated the selected speaker profile. Regenerate its segments to apply the new voices."); refresh(); }, onError: error => toast.error(error.message) });
-  const renderPreset = trpc.projects.renderExportPreset.useMutation({ onSuccess: () => { toast.success("Preset render started."); refresh(); }, onError: error => toast.error(error.message) });
 
   useEffect(() => {
     if (!project || !["queued", "processing", "uploading"].includes(project.status)) return;
@@ -93,7 +89,6 @@ export default function LocalizationProjectPage() {
   function edit(segment: NonNullable<typeof query.data>["segments"][number]) {
     setEditing(segment.id);
     setTamilText(segment.tamilText || "");
-    setSpeaker(segment.speaker || "Speaker 1");
     setPronunciationHint(segment.pronunciationHint || "");
     setVoiceId(segment.voiceId as typeof voiceId);
     setVoiceStyle(segment.voiceStyle as typeof voiceStyle);
@@ -101,7 +96,7 @@ export default function LocalizationProjectPage() {
   }
 
   function save(segmentId: number) {
-    update.mutate({ projectId, segmentId, speaker, tamilText, pronunciationHint, voiceId, voiceStyle, speed: Number(speed) });
+    update.mutate({ projectId, segmentId, tamilText, pronunciationHint, voiceId, voiceStyle, speed: Number(speed) });
   }
 
   function retryFailedStage() {
@@ -204,7 +199,7 @@ export default function LocalizationProjectPage() {
       <section className="overflow-hidden rounded-3xl border border-border/70 bg-card">
         <div className="border-b border-border/70 p-6">
           <h2 className="font-semibold">Timeline translation editor</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Label speakers, assign Tamil voices and styles, then regenerate only the dialogue that changed.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Edit Tamil wording, voice, timing, and a specific pronunciation hint for each segment.</p>
         </div>
         {query.data?.segments.length ? (
           <div className="divide-y divide-border/60">
@@ -214,8 +209,7 @@ export default function LocalizationProjectPage() {
                   <div className="grid gap-4 lg:grid-cols-[150px_1fr_1fr_180px]">
                     <div><p className="text-xs uppercase text-muted-foreground">Time</p><p className="mt-2 text-sm font-medium">{formatDuration(segment.startSeconds)}–{formatDuration(segment.endSeconds)}</p></div>
                     <div>
-                      <Label>Speaker label</Label><Input className="mt-2" value={speaker} onChange={event => setSpeaker(event.target.value)} placeholder="Speaker 1" />
-                      <Label className="mt-4 block">Original speech</Label><p className="mt-2 text-sm text-muted-foreground">{segment.sourceText}</p>
+                      <Label>Original speech</Label><p className="mt-2 text-sm text-muted-foreground">{segment.sourceText}</p>
                       <Label className="mt-4 block">Pronunciation hint</Label>
                       <Input className="mt-2" value={pronunciationHint} onChange={event => setPronunciationHint(event.target.value)} placeholder="Optional Tamil spoken-form hint" />
                       <p className="mt-1 text-xs text-muted-foreground">Applies after project pronunciation rules for this segment.</p>
@@ -226,13 +220,13 @@ export default function LocalizationProjectPage() {
                       <select className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={voiceId} onChange={event => setVoiceId(event.target.value as typeof voiceId)}>{voices.map(item => <option key={item}>{item}</option>)}</select>
                       <select className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={voiceStyle} onChange={event => setVoiceStyle(event.target.value as typeof voiceStyle)}>{styles.map(item => <option key={item}>{item}</option>)}</select>
                       <Input type="number" min="0.85" max="1.18" step="0.01" value={speed} onChange={event => setSpeed(event.target.value)} />
-                      <div className="flex flex-wrap gap-2"><Button type="button" size="sm" disabled={update.isPending} onClick={() => save(segment.id)}><Save className="mr-1 h-3.5 w-3.5" />Save</Button><Button type="button" size="sm" variant="outline" disabled={applySpeakerVoice.isPending || !speaker.trim()} onClick={() => applySpeakerVoice.mutate({ projectId, speaker: speaker.trim(), voiceId, voiceStyle })}><Users className="mr-1 h-3.5 w-3.5" />Apply to speaker</Button><Button type="button" size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>
+                      <div className="flex gap-2"><Button type="button" size="sm" disabled={update.isPending} onClick={() => save(segment.id)}><Save className="mr-1 h-3.5 w-3.5" />Save</Button><Button type="button" size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>
                     </div>
                   </div>
                 ) : (
                   <div className="grid gap-4 lg:grid-cols-[150px_.9fr_1fr_180px]">
                     <div><p className="text-xs uppercase text-muted-foreground">Time</p><p className="mt-2 text-sm font-medium">{formatDuration(segment.startSeconds)}–{formatDuration(segment.endSeconds)}</p></div>
-                    <div><p className="text-xs uppercase text-muted-foreground">{segment.speaker || "Speaker 1"}</p><p className="mt-2 text-sm text-muted-foreground">{segment.sourceText}</p>{segment.pronunciationHint ? <p className="mt-3 text-xs text-cyan-200">Pronunciation: {segment.pronunciationHint}</p> : null}</div>
+                    <div><p className="text-xs uppercase text-muted-foreground">Original</p><p className="mt-2 text-sm text-muted-foreground">{segment.sourceText}</p>{segment.pronunciationHint ? <p className="mt-3 text-xs text-cyan-200">Pronunciation: {segment.pronunciationHint}</p> : null}</div>
                     <div><p className="text-xs uppercase text-muted-foreground">Tamil translation</p><p className="mt-2 text-sm">{segment.tamilText || "Translation is being prepared…"}</p></div>
                     <div className="flex flex-wrap items-start gap-2 lg:justify-end">
                       <Button type="button" size="sm" variant="outline" onClick={() => edit(segment)}><Pencil className="mr-1 h-3.5 w-3.5" />Edit</Button>
@@ -245,10 +239,6 @@ export default function LocalizationProjectPage() {
             ))}
           </div>
         ) : <div className="p-10 text-center text-sm text-muted-foreground"><FileText className="mx-auto mb-3 h-6 w-6 text-violet-400" />Transcript segments will appear here after transcription completes.</div>}
-      </section>
-      <section className="rounded-3xl border border-border/70 bg-card p-6">
-        <div className="flex items-start gap-3"><div className="rounded-xl bg-violet-500/10 p-2 text-violet-300"><Video className="h-5 w-5" /></div><div><h2 className="font-semibold">Delivery export</h2><p className="mt-1 text-sm text-muted-foreground">Render a new MP4 from the existing Tamil audio without regenerating voices.</p></div></div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{exportPresets.map(preset => <Button key={preset.id} type="button" variant="outline" disabled={renderPreset.isPending || !project.finalVideoUrl} onClick={() => renderPreset.mutate({ projectId, exportPreset: preset.id })}>{renderPreset.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Video className="mr-2 h-4 w-4" />}{preset.label}</Button>)}</div>
       </section>
     </div>
   );
