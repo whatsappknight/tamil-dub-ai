@@ -16,5 +16,8 @@ describe("Localization project retry control", () => {
     expect(page).toContain("onClick={resumeInterruptedStage}");
     expect(page).toContain("resumeInterrupted.mutate({ projectId })");
     expect(page).toContain("disabled={resumeInterrupted.isPending}");
+    expect(page).toContain('role="progressbar"');
+    expect(page).toContain("Approaching limit — backup keys are ready.");
+    expect(page).toContain("Nearly exhausted — the next available key will be used automatically.");
   });
 });
