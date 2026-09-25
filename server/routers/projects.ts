@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { isRetryableStage, type PipelineStage } from "../../shared/pipeline";
 import { completeProjectUpload, createProjectDraft, getProjectForUser, getProjectSegment, getProjectWithDetails, getUserProjectSummary, listProjectsForUser, updateProject, updateProjectSegment } from "../db";
+import { getElevenLabsUsage } from "../providers/tts";
 import { storageCreatePresignedUpload } from "../storage";
 import { enqueueProjectPipeline, inspectProjectSourceMedia, regenerateOneSegmentAndRender } from "../services/pipeline";
 import { refreshMurfDubbingProject, startMurfDubbingProject } from "../services/murfDub";
@@ -26,6 +27,7 @@ async function ownedSegment(projectId: number, segmentId: number, userId: number
 export const projectRouter = router({
   summary: protectedProcedure.query(({ ctx }) => getUserProjectSummary(ctx.user.id)),
   list: protectedProcedure.query(({ ctx }) => listProjectsForUser(ctx.user.id)),
+  elevenLabsUsage: protectedProcedure.query(() => getElevenLabsUsage()),
   get: protectedProcedure.input(z.object({ projectId: z.number().int().positive() })).query(async ({ ctx, input }) => { const result = await getProjectWithDetails(input.projectId, ctx.user.id); if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found." }); return result; }),
   prepareUpload: protectedProcedure.input(settings.merge(fileInput)).mutation(async ({ ctx, input }) => {
     validateFile(input);

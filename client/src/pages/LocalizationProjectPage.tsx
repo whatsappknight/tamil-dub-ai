@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate, formatDuration, stageLabel } from "@/lib/format";
 import { trpc } from "@/lib/trpc";
-import { Download, FileText, Loader2, Pencil, RefreshCcw, RotateCw, Save, Volume2 } from "lucide-react";
+import { Activity, Download, FileText, Loader2, Pencil, RefreshCcw, RotateCw, Save, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLocation, useRoute } from "wouter";
@@ -22,6 +22,7 @@ export default function LocalizationProjectPage() {
   const utils = trpc.useUtils();
   const canLoadProject = Number.isSafeInteger(projectId) && projectId > 0;
   const query = trpc.projects.get.useQuery({ projectId }, { enabled: canLoadProject });
+  const elevenLabsUsage = trpc.projects.elevenLabsUsage.useQuery(undefined, { refetchInterval: 15_000, staleTime: 0 });
   const project = query.data?.project;
   const [editing, setEditing] = useState<number | null>(null);
   const [tamilText, setTamilText] = useState("");
@@ -246,6 +247,15 @@ export default function LocalizationProjectPage() {
         </section>
       </div>
 
+      <section className="rounded-3xl border border-violet-400/20 bg-violet-500/5 p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex gap-3"><Activity className="mt-0.5 h-5 w-5 shrink-0 text-violet-300" /><div><h2 className="font-semibold">ElevenLabs live usage</h2><p className="mt-1 text-sm text-muted-foreground">Character usage is read securely from ElevenLabs and refreshed every 15 seconds. API keys never reach the browser.</p></div></div>
+          <span className="w-fit rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-medium text-emerald-300">{elevenLabsUsage.isFetching ? "Updating…" : "Live"}</span>
+        </div>
+        {!elevenLabsUsage.data?.configured ? <p className="mt-5 rounded-xl border border-border/70 bg-background/30 p-4 text-sm text-muted-foreground">No ElevenLabs server credential is configured for this workspace.</p> : <div className="mt-5 grid gap-4 md:grid-cols-2">{elevenLabsUsage.data.accounts.map(account => <div className="rounded-2xl border border-border/70 bg-background/30 p-4" key={account.label}><div className="flex items-center justify-between gap-3"><p className="font-medium">{account.label} credential</p>{account.tier ? <span className="rounded-full bg-violet-400/10 px-2 py-1 text-xs capitalize text-violet-200">{account.tier}</span> : null}</div>{account.error ? <p className="mt-3 text-sm text-rose-300">{account.error}</p> : <><div className="mt-4 flex items-end justify-between gap-3"><div><p className="text-2xl font-semibold">{formatCharacterCount(account.characterCount)}</p><p className="text-xs text-muted-foreground">characters used</p></div><p className="text-right text-sm text-muted-foreground">{formatCharacterCount(account.remainingCharacters)} remaining<br />{account.percentUsed ?? 0}% used</p></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-violet-400 transition-[width] duration-500" style={{ width: `${account.percentUsed ?? 0}%` }} /></div>{account.nextResetAt ? <p className="mt-3 text-xs text-muted-foreground">Resets {formatUsageReset(account.nextResetAt)}</p> : null}</>}</div>)}</div>}
+        {elevenLabsUsage.data?.fetchedAt ? <p className="mt-4 text-xs text-muted-foreground">Last checked {formatUsageReset(Math.floor(elevenLabsUsage.data.fetchedAt / 1000))}</p> : null}
+      </section>
+
       {project.dubbingProvider === "murf" ? <section className="rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-6"><h2 className="font-semibold">Murf AI managed output</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Murf AI manages translation, Tamil voice selection, and synchronization for this project. TamilDub AI securely imports the completed MP4 and SRT here. Create a Standard TamilDub project when you need local per-segment editing or voice regeneration.</p></section> : <section className="overflow-hidden rounded-3xl border border-border/70 bg-card">
         <div className="border-b border-border/70 p-6">
           <h2 className="font-semibold">Timeline translation editor</h2>
@@ -295,5 +305,8 @@ export default function LocalizationProjectPage() {
 }
 
 function Row({ label, value }: { label: string; value: string }) {
-  return <div className="flex justify-between gap-4"><dt className="text-muted-foreground">{label}</dt><dd className="text-right font-medium capitalize">{value}</dd></div>;
+  return <div className="flex items-start justify-between gap-4 border-b border-border/60 pb-2 last:border-0 last:pb-0"><dt className="text-muted-foreground">{label}</dt><dd className="text-right font-medium capitalize">{value}</dd></div>;
 }
+
+function formatCharacterCount(value: number | null | undefined) { return value === null || value === undefined ? "—" : new Intl.NumberFormat().format(value); }
+function formatUsageReset(unixSeconds: number) { return new Date(unixSeconds * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); }
