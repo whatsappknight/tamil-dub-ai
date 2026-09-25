@@ -19,6 +19,19 @@ describe("backup ElevenLabs Tamil TTS credential", () => {
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(100);
   }, 30_000);
 
+  liveIt.each([
+    ["Backup 2", "TTS_BACKUP_API_KEY_2"],
+    ["Backup 3", "TTS_BACKUP_API_KEY_3"],
+  ])("validates %s with the non-consuming subscription endpoint", async (_label, keyName) => {
+    const apiKey = process.env[keyName];
+    if (!apiKey) throw new Error(`${keyName} must be configured.`);
+    const response = await fetch("https://api.elevenlabs.io/v1/user/subscription", { headers: { "xi-api-key": apiKey, Accept: "application/json" } });
+    expect(response.status, `${keyName} was rejected by ElevenLabs.`).toBe(200);
+    const payload = await response.json() as { character_count?: unknown; character_limit?: unknown };
+    expect(Number.isFinite(Number(payload.character_count))).toBe(true);
+    expect(Number.isFinite(Number(payload.character_limit))).toBe(true);
+  }, 30_000);
+
   liveIt("uses the real backup credential after a forced primary authentication failure", async () => {
     vi.stubEnv("TTS_PROVIDER", "elevenlabs");
     vi.stubEnv("TTS_API_KEY", "invalid-primary-key-for-backup-validation");
