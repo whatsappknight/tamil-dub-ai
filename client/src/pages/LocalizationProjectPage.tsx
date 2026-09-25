@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useLocation, useRoute } from "wouter";
 
 const voices = ["male-1", "male-2", "female-1", "female-2", "narrator", "youth"] as const;
-const styles = ["natural", "professional", "friendly", "documentary", "energetic"] as const;
+const styles = ["natural", "conversational", "professional", "friendly", "documentary", "energetic"] as const;
 
 export default function LocalizationProjectPage() {
   const [, params] = useRoute("/projects/:projectId");
@@ -28,7 +28,7 @@ export default function LocalizationProjectPage() {
   const [pronunciationHint, setPronunciationHint] = useState("");
   const [voiceId, setVoiceId] = useState<typeof voices[number]>("female-1");
   const [voiceStyle, setVoiceStyle] = useState<typeof styles[number]>("natural");
-  const [speed, setSpeed] = useState("1");
+  const [speed, setSpeed] = useState("1.06");
   const [retryNotice, setRetryNotice] = useState<string | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
   const [previewTime, setPreviewTime] = useState(0);

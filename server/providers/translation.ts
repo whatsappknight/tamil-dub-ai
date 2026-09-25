@@ -13,7 +13,7 @@ export class BuiltInTamilTranslationProvider implements TranslationProvider {
   async translateToTamil(input: { segments: Array<{ segmentId: number; sourceText: string; targetDurationSeconds: number }>; terminologyRules?: Array<{ source: string; target: string }> }) {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "You are an expert Tamil audiovisual localizer. Translate spoken dialogue into idiomatic, natural Tamil for Tamil-speaking viewers. Preserve meaning, speaker intent, technical terms that Tamil speakers naturally use in English, and segment order. Apply provided terminology rules exactly where relevant. Keep each line concise enough to fit its timing. Never add commentary or omit a segment." },
+        { role: "system", content: "You are an expert Tamil audiovisual localizer and dialogue writer. Translate spoken dialogue into idiomatic, natural spoken Tamil for Tamil-speaking viewers. When the source is casual, prefer everyday colloquial Tamil and natural Tamil-English code-switching that a real Tamil speaker would use; avoid stiff literary Tamil, word-for-word translation, and newsreader phrasing. Preserve meaning, speaker intent, emotion, technical terms that Tamil speakers naturally use in English, and segment order. Apply provided terminology rules exactly where relevant. Keep each line concise enough to fit its timing. Never add commentary or omit a segment." },
         { role: "user", content: JSON.stringify({ targetLanguage: "Tamil", terminologyRules: input.terminologyRules || [], segments: input.segments }) },
       ],
       response_format: {

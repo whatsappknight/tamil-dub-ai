@@ -9,7 +9,7 @@ import { validateDirectVideoUpload } from "../services/upload-validation";
 import { protectedProcedure, router } from "../_core/trpc";
 
 const voices = ["male-1", "male-2", "female-1", "female-2", "narrator", "youth"] as const;
-const styles = ["natural", "professional", "friendly", "documentary", "energetic"] as const;
+const styles = ["natural", "conversational", "professional", "friendly", "documentary", "energetic"] as const;
 const settings = z.object({ projectName: z.string().trim().min(1).max(160), originalLanguage: z.string().trim().min(2).max(24).default("auto"), dubbingProvider: z.enum(["local", "murf"]).default("local"), voiceId: z.enum(voices), voiceStyle: z.enum(styles), terminologyRules: z.string().max(6000).default(""), pronunciationRules: z.string().max(6000).default(""), subtitleStyle: z.enum(["minimal", "studio", "high_contrast"]).default("studio"), allowVoiceProviderFallback: z.boolean().default(true), preserveBackgroundAudio: z.boolean().default(false), preserveSoundEffects: z.boolean().default(false), generateSubtitles: z.boolean().default(false), burnSubtitles: z.boolean().default(false), createSrt: z.boolean().default(false), copyrightOwnershipConfirmed: z.literal(true), copyrightResponsibilityConfirmed: z.literal(true) });
 const fileInput = z.object({ filename: z.string().trim().min(1).max(255), mimeType: z.string().trim(), sizeBytes: z.number().int().positive() });
 

@@ -124,7 +124,7 @@ export async function replaceProjectSegments(projectId: number, segments: Array<
   const db = requireDb(await getDb());
   await db.delete(projectSegments).where(eq(projectSegments.projectId, projectId));
   if (!segments.length) return;
-  const values: InsertProjectSegment[] = segments.map((segment, index) => ({ projectId, sortOrder: index, startSeconds: segment.startSeconds, endSeconds: segment.endSeconds, sourceText: segment.sourceText, speaker: segment.speaker, tamilText: null, voiceId, voiceStyle, pronunciationHint: null, speed: "1.00", status: "transcribed" }));
+  const values: InsertProjectSegment[] = segments.map((segment, index) => ({ projectId, sortOrder: index, startSeconds: segment.startSeconds, endSeconds: segment.endSeconds, sourceText: segment.sourceText, speaker: segment.speaker, tamilText: null, voiceId, voiceStyle, pronunciationHint: null, speed: "1.06", status: "transcribed" }));
   await db.insert(projectSegments).values(values);
 }
 

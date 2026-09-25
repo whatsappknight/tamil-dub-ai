@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useLocation, useRoute } from "wouter";
 
 const voices = ["male-1", "male-2", "female-1", "female-2", "narrator", "youth"] as const;
-const styles = ["natural", "professional", "friendly", "documentary", "energetic"] as const;
+const styles = ["natural", "conversational", "professional", "friendly", "documentary", "energetic"] as const;
 
 export default function ProjectPage() {
   const [, params] = useRoute("/projects/:projectId");
@@ -28,7 +28,7 @@ export default function ProjectPage() {
   const [tamilText, setTamilText] = useState("");
   const [voiceId, setVoiceId] = useState<typeof voices[number]>("female-1");
   const [voiceStyle, setVoiceStyle] = useState<typeof styles[number]>("natural");
-  const [speed, setSpeed] = useState("1");
+  const [speed, setSpeed] = useState("1.06");
   const project = details.data?.project;
 
   useEffect(() => { if (!project || !["queued", "processing", "uploading"].includes(project.status)) return; const timer = window.setInterval(() => void utils.projects.get.invalidate({ projectId }), 3000); return () => window.clearInterval(timer); }, [project?.status, projectId, utils.projects.get]);

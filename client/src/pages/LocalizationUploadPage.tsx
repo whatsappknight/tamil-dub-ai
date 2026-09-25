@@ -57,7 +57,7 @@ export default function LocalizationUploadPage() {
   const [language, setLanguage] = useState("auto");
   const [dubbingProvider, setDubbingProvider] = useState<"local" | "murf">("local");
   const [voiceId, setVoiceId] = useState<VoiceId>("female-1");
-  const [voiceStyle, setVoiceStyle] = useState("natural");
+  const [voiceStyle, setVoiceStyle] = useState("conversational");
   const [terminologyRules, setTerminologyRules] = useState("");
   const [pronunciationRules, setPronunciationRules] = useState("");
   const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>("studio");
@@ -93,7 +93,7 @@ export default function LocalizationUploadPage() {
         originalLanguage: language,
         dubbingProvider,
         voiceId,
-        voiceStyle: voiceStyle as "natural" | "professional" | "friendly" | "documentary" | "energetic",
+        voiceStyle: voiceStyle as "natural" | "conversational" | "professional" | "friendly" | "documentary" | "energetic",
         terminologyRules,
         pronunciationRules,
         subtitleStyle,
@@ -138,7 +138,7 @@ export default function LocalizationUploadPage() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2"><Field label="Project name"><Input value={projectName} onChange={event => setProjectName(event.target.value)} /></Field><Field label="Original language"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={language} onChange={event => setLanguage(event.target.value)}>{[["auto", "Auto detect"], ["en", "English"], ["hi", "Hindi"], ["te", "Telugu"], ["ml", "Malayalam"], ["kn", "Kannada"]].map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></Field></div>
             {dubbingProvider === "local" ? <>
               <div className="mt-5"><Label>Tamil voice profile</Label><div className="mt-2 grid gap-2 sm:grid-cols-2">{VOICES.map(voice => <button type="button" key={voice.id} onClick={() => setVoiceId(voice.id)} className={`rounded-xl border p-3 text-left ${voiceId === voice.id ? "border-violet-500 bg-violet-500/10" : "border-border"}`}><div className="flex justify-between"><span className="text-sm font-semibold">{voice.name}</span>{voiceId === voice.id ? <Check className="h-4 w-4 text-violet-400" /> : null}</div><p className="mt-1 text-xs text-muted-foreground">{voice.detail}</p></button>)}</div></div>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="Voice style"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={voiceStyle} onChange={event => setVoiceStyle(event.target.value)}>{["natural", "professional", "friendly", "documentary", "energetic"].map(value => <option key={value}>{value}</option>)}</select></Field><Toggle title="Use configured backup voice provider" detail="Used only when a compatible administrator-configured fallback is available." checked={fallback} onChange={setFallback} /></div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="Voice style"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={voiceStyle} onChange={event => setVoiceStyle(event.target.value)}>{["natural", "conversational", "professional", "friendly", "documentary", "energetic"].map(value => <option key={value}>{value === "conversational" ? "Conversational Tamil" : value}</option>)}</select></Field><Toggle title="Use configured backup voice provider" detail="Used only when a compatible administrator-configured fallback is available." checked={fallback} onChange={setFallback} /></div>
               <Rules label="Terminology rules" detail="Use source => Tamil preferred term, one per line. These rules guide translation." value={terminologyRules} onChange={setTerminologyRules} placeholder={"Dashboard => டாஷ்போர்டு\nAI => செயற்கை நுண்ணறிவு"} />
               <Rules label="Pronunciation rules" detail="Use spoken form => preferred spoken form, one per line." value={pronunciationRules} onChange={setPronunciationRules} placeholder={"OpenAI => ஓபன் ஏஐ\nSaaS => சாஸ்"} />
             </> : <p className="mt-5 rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-3 text-sm text-cyan-100">Murf AI controls translation, Tamil voice choice, timing, and subtitle generation. TamilDub AI will import the completed MP4/SRT into this project.</p>}
