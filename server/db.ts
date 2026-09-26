@@ -120,6 +120,7 @@ export async function getLatestProcessingJob(projectId: number, stage: PipelineS
 export async function getProjectSegments(projectId: number) { const db = requireDb(await getDb()); return db.select().from(projectSegments).where(eq(projectSegments.projectId, projectId)).orderBy(projectSegments.sortOrder); }
 export async function getProjectSegment(segmentId: number) { const db = requireDb(await getDb()); return (await db.select().from(projectSegments).where(eq(projectSegments.id, segmentId)).limit(1))[0]; }
 export async function resetProjectSegmentVoices(projectId: number) { const db = requireDb(await getDb()); await db.update(projectSegments).set({ ttsAudioKey: null, ttsAudioUrl: null, status: "translated" }).where(eq(projectSegments.projectId, projectId)); }
+export async function normalizeProjectSegmentGaps(projectId: number, maxGapSeconds = 1.25) { const db = requireDb(await getDb()); const rows = await getProjectSegments(projectId); for (let index = 0; index < rows.length - 1; index += 1) { const current = rows[index]!; const next = rows[index + 1]!; const gap = Number(next.startSeconds) - Number(current.endSeconds); if (gap > 0.05 && gap <= maxGapSeconds) await db.update(projectSegments).set({ endSeconds: next.startSeconds }).where(eq(projectSegments.id, current.id)); } }
 
 export async function replaceProjectSegments(projectId: number, segments: Array<{ startSeconds: number; endSeconds: number; sourceText: string; speaker: string | null }>, voiceId: string, voiceStyle: string) {
   const db = requireDb(await getDb());

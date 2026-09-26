@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AUTOMATIC_VOICE_RETRY_LIMIT, NATURAL_TAMIL_TEMPO_FLOOR, automaticVoiceRetryDelayMs, shouldAutomaticallyRetryVoiceStage, tamilVoiceAtempoFilter, tamilVoiceTempoForTarget, voiceGenerationProgress } from "./services/pipeline";
+import { AUTOMATIC_VOICE_RETRY_LIMIT, NATURAL_TAMIL_TEMPO_FLOOR, automaticVoiceRetryDelayMs, closeShortDialogueGaps, shouldAutomaticallyRetryVoiceStage, tamilVoiceAtempoFilter, tamilVoiceTempoForTarget, voiceGenerationProgress } from "./services/pipeline";
 
 describe("Tamil voice duration fitting", () => {
   it("does not stretch a short Tamil voice below a natural speaking speed", () => {
@@ -26,5 +26,10 @@ describe("Tamil voice duration fitting", () => {
     expect(automaticVoiceRetryDelayMs(0)).toBe(2000);
     expect(automaticVoiceRetryDelayMs(1)).toBe(4000);
     expect(automaticVoiceRetryDelayMs(20)).toBe(30000);
+  });
+
+  it("closes only short dialogue gaps while preserving real scene pauses", () => {
+    const segments = [{ startSeconds: 0, endSeconds: 2 }, { startSeconds: 2.8, endSeconds: 4 }, { startSeconds: 7, endSeconds: 8 }];
+    expect(closeShortDialogueGaps(segments)).toEqual([{ startSeconds: 0, endSeconds: 2.8 }, { startSeconds: 2.8, endSeconds: 4 }, { startSeconds: 7, endSeconds: 8 }]);
   });
 });

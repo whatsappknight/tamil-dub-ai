@@ -73,6 +73,13 @@ export default function LocalizationProjectPage() {
     },
     onError: error => toast.error(error.message || "The natural-speed rerender could not be started."),
   });
+  const rerenderNaturalDialogue = trpc.projects.rerenderNaturalDialogue.useMutation({
+    onSuccess: async () => {
+      toast.success("Natural dialogue regeneration started with gap filling and human-speed timing.");
+      await utils.projects.get.invalidate({ projectId });
+    },
+    onError: error => toast.error(error.message || "The natural dialogue regeneration could not be started."),
+  });
   const refreshMurf = trpc.projects.refreshMurfStatus.useMutation({
     onSuccess: refresh,
     onError: error => toast.error(error.message || "Murf status could not be refreshed."),
@@ -192,10 +199,16 @@ export default function LocalizationProjectPage() {
             {resumeInterrupted.isPending ? "Resuming stage…" : "Resume interrupted stage"}
           </Button>
         ) : project.status === "completed" && project.dubbingProvider === "local" ? (
-          <Button type="button" className="min-w-48 gap-2" onClick={() => rerenderNaturalTiming.mutate({ projectId })} disabled={rerenderNaturalTiming.isPending}>
-            {rerenderNaturalTiming.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
-            {rerenderNaturalTiming.isPending ? "Rerendering naturally…" : "Rerender natural timing"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" className="min-w-48 gap-2" onClick={() => rerenderNaturalDialogue.mutate({ projectId })} disabled={rerenderNaturalDialogue.isPending || rerenderNaturalTiming.isPending}>
+              {rerenderNaturalDialogue.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+              {rerenderNaturalDialogue.isPending ? "Filling dialogue…" : "Fix silent gaps"}
+            </Button>
+            <Button type="button" variant="outline" className="gap-2" onClick={() => rerenderNaturalTiming.mutate({ projectId })} disabled={rerenderNaturalTiming.isPending || rerenderNaturalDialogue.isPending}>
+              {rerenderNaturalTiming.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+              {rerenderNaturalTiming.isPending ? "Rerendering…" : "Natural timing only"}
+            </Button>
+          </div>
         ) : null}
       </header>
 

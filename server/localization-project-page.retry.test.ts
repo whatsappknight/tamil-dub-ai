@@ -20,6 +20,8 @@ describe("Localization project retry control", () => {
     expect(page).toContain("Approaching limit — backup keys are ready.");
     expect(page).toContain("Nearly exhausted — the next available key will be used automatically.");
     expect(page).toContain("rerenderNaturalTiming.mutate({ projectId })");
-    expect(page).toContain("Rerender natural timing");
+    expect(page).toContain("Natural timing only");
+    expect(page).toContain("rerenderNaturalDialogue.mutate({ projectId })");
+    expect(page).toContain("Fix silent gaps");
   });
 });
