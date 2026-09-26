@@ -34,7 +34,7 @@ export function duckedTamilBackgroundFilter() {
 }
 
 export function trimTamilTtsEdgeSilenceFilter() {
-  return "silenceremove=start_periods=1:start_duration=0.10:start_threshold=-36dB:stop_periods=1:stop_duration=0.10:stop_threshold=-36dB";
+  return "silenceremove=start_periods=1:start_duration=0.10:start_threshold=-36dB:stop_periods=-1:stop_duration=0.10:stop_threshold=-36dB";
 }
 
 export async function downloadSignedObject(url: string, targetPath: string, request: typeof fetch = fetch) {

@@ -41,6 +41,7 @@ describe("FFmpeg TamilDub render path", () => {
     await runFfmpeg(["-i", raw, "-af", trimTamilTtsEdgeSilenceFilter(), "-c:a", "pcm_s16le", trimmed]);
     expect(await probeDurationSeconds(raw)).toBeGreaterThan(0.7);
     expect(await probeDurationSeconds(trimmed)).toBeLessThan(0.45);
+    expect(trimTamilTtsEdgeSilenceFilter()).toContain("stop_periods=-1");
   }, 30_000);
 
   it("fails safely instead of waiting indefinitely for a processing-input download", async () => {
