@@ -66,6 +66,13 @@ export default function LocalizationProjectPage() {
       await utils.projects.get.invalidate({ projectId });
     },
   });
+  const rerenderNaturalTiming = trpc.projects.rerenderNaturalTiming.useMutation({
+    onSuccess: async () => {
+      toast.success("Natural-speed rerender started. Existing Tamil voice audio will be reused.");
+      await utils.projects.get.invalidate({ projectId });
+    },
+    onError: error => toast.error(error.message || "The natural-speed rerender could not be started."),
+  });
   const refreshMurf = trpc.projects.refreshMurfStatus.useMutation({
     onSuccess: refresh,
     onError: error => toast.error(error.message || "Murf status could not be refreshed."),
@@ -183,6 +190,11 @@ export default function LocalizationProjectPage() {
           >
             {resumeInterrupted.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
             {resumeInterrupted.isPending ? "Resuming stage…" : "Resume interrupted stage"}
+          </Button>
+        ) : project.status === "completed" && project.dubbingProvider === "local" ? (
+          <Button type="button" className="min-w-48 gap-2" onClick={() => rerenderNaturalTiming.mutate({ projectId })} disabled={rerenderNaturalTiming.isPending}>
+            {rerenderNaturalTiming.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+            {rerenderNaturalTiming.isPending ? "Rerendering naturally…" : "Rerender natural timing"}
           </Button>
         ) : null}
       </header>
