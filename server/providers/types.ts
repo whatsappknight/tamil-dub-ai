@@ -23,6 +23,7 @@ export interface SpeechToTextProvider {
 export interface TranslationProvider {
   translateToTamil(input: {
     segments: Array<{ segmentId: number; sourceText: string; targetDurationSeconds: number }>;
+    paragraphContext?: string;
     terminologyRules?: LocalizationRule[];
   }): Promise<TranslationSegment[]>;
 }

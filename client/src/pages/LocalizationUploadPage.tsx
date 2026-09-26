@@ -65,7 +65,7 @@ export default function LocalizationUploadPage() {
   const [subtitles, setSubtitles] = useState(true);
   const [burn, setBurn] = useState(false);
   const [srt, setSrt] = useState(true);
-  const [music, setMusic] = useState(true);
+  const [music, setMusic] = useState(false);
   const [effects, setEffects] = useState(true);
   const [owns, setOwns] = useState(false);
   const [responsible, setResponsible] = useState(false);
@@ -149,7 +149,7 @@ export default function LocalizationUploadPage() {
               <ProviderChoice selected={dubbingProvider === "local"} title="Standard TamilDub" detail="Google AI Studio voices, local timeline editing, audio controls, and render presets." onClick={() => setDubbingProvider("local")} />
               <ProviderChoice selected={dubbingProvider === "murf"} title="Murf AI managed dub" detail="Murf translates, voices, synchronizes, and returns a Tamil MP4/SRT. Provider credits apply." onClick={() => setDubbingProvider("murf")} tone="cyan" />
             </div>
-            {dubbingProvider === "local" ? <><div className="mt-5 grid gap-2 sm:grid-cols-3">{SUBTITLE_STYLES.map(style => <button key={style.id} type="button" onClick={() => setSubtitleStyle(style.id)} className={`rounded-xl border p-3 text-left ${subtitleStyle === style.id ? "border-violet-500 bg-violet-500/10" : "border-border"}`}><p className="text-sm font-semibold">{style.name}</p><p className="mt-1 text-xs text-muted-foreground">{style.detail}</p></button>)}</div><div className="mt-5 grid gap-3 sm:grid-cols-2"><Toggle title="Generate Tamil subtitles" detail="Create timed captions." checked={subtitles} onChange={setSubtitles} /><Toggle title="Burn captions into MP4" detail="Render selected style into video." checked={burn} onChange={setBurn} /><Toggle title="Create separate SRT" detail="Downloadable subtitle export." checked={srt} onChange={setSrt} /><Toggle title="Preserve background music" detail="Uses a safe fallback if separation is unavailable." checked={music} onChange={setMusic} /><Toggle title="Preserve sound effects" detail="Requires an audio-separation provider." checked={effects} onChange={setEffects} /></div></> : null}
+            {dubbingProvider === "local" ? <><div className="mt-5 grid gap-2 sm:grid-cols-3">{SUBTITLE_STYLES.map(style => <button key={style.id} type="button" onClick={() => setSubtitleStyle(style.id)} className={`rounded-xl border p-3 text-left ${subtitleStyle === style.id ? "border-violet-500 bg-violet-500/10" : "border-border"}`}><p className="text-sm font-semibold">{style.name}</p><p className="mt-1 text-xs text-muted-foreground">{style.detail}</p></button>)}</div><div className="mt-5 grid gap-3 sm:grid-cols-2"><Toggle title="Generate Tamil subtitles" detail="Create timed captions." checked={subtitles} onChange={setSubtitles} /><Toggle title="Burn captions into MP4" detail="Render selected style into video." checked={burn} onChange={setBurn} /><Toggle title="Create separate SRT" detail="Downloadable subtitle export." checked={srt} onChange={setSrt} /><Toggle title="Tamil voice only" detail="Original English audio is removed completely." checked={!music} onChange={() => setMusic(false)} /><Toggle title="Preserve sound effects" detail="Requires an audio-separation provider." checked={effects} onChange={setEffects} /></div></> : null}
           </section>
         </main>
         <aside className="h-fit space-y-5 lg:sticky lg:top-6">

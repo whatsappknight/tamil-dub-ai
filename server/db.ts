@@ -119,6 +119,7 @@ export async function updateProcessingJob(jobId: number, patch: Partial<InsertPr
 export async function getLatestProcessingJob(projectId: number, stage: PipelineStage) { const db = requireDb(await getDb()); return (await db.select().from(processingJobs).where(and(eq(processingJobs.projectId, projectId), eq(processingJobs.stage, stage))).orderBy(desc(processingJobs.createdAt)).limit(1))[0]; }
 export async function getProjectSegments(projectId: number) { const db = requireDb(await getDb()); return db.select().from(projectSegments).where(eq(projectSegments.projectId, projectId)).orderBy(projectSegments.sortOrder); }
 export async function getProjectSegment(segmentId: number) { const db = requireDb(await getDb()); return (await db.select().from(projectSegments).where(eq(projectSegments.id, segmentId)).limit(1))[0]; }
+export async function resetProjectSegmentVoices(projectId: number) { const db = requireDb(await getDb()); await db.update(projectSegments).set({ ttsAudioKey: null, ttsAudioUrl: null, status: "translated" }).where(eq(projectSegments.projectId, projectId)); }
 
 export async function replaceProjectSegments(projectId: number, segments: Array<{ startSeconds: number; endSeconds: number; sourceText: string; speaker: string | null }>, voiceId: string, voiceStyle: string) {
   const db = requireDb(await getDb());
