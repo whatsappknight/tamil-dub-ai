@@ -37,7 +37,8 @@ async function chunkAudio(audioPath: string, workDir: string) {
   return chunks;
 }
 async function silentAudio(target: string, seconds: number) { await runFfmpeg(["-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", Math.max(seconds, 0.02).toFixed(3), "-c:a", "pcm_s16le", target]); }
-export function tamilVoiceTempoForTarget(originalSeconds: number, targetSeconds: number, speed: number) { return Math.min(2, Math.max(0.25, (originalSeconds / Math.max(targetSeconds, 0.25)) * speed)); }
+export const NATURAL_TAMIL_TEMPO_FLOOR = 0.92;
+export function tamilVoiceTempoForTarget(originalSeconds: number, targetSeconds: number, speed: number) { return Math.min(2, Math.max(NATURAL_TAMIL_TEMPO_FLOOR, (originalSeconds / Math.max(targetSeconds, 0.25)) * speed)); }
 export function tamilVoiceAtempoFilter(tempo: number) { let remaining = Math.min(2, Math.max(0.25, tempo)); const filters: string[] = []; while (remaining < 0.5) { filters.push("atempo=0.5"); remaining /= 0.5; } while (remaining > 2) { filters.push("atempo=2"); remaining /= 2; } filters.push(`atempo=${remaining.toFixed(3)}`); return filters.join(","); }
 async function timedAudio(source: string, target: string, seconds: number, speed: number) {
   const trimmed = `${target}.trimmed.wav`;
