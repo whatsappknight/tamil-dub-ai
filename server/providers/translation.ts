@@ -34,7 +34,7 @@ export class BuiltInTamilTranslationProvider implements TranslationProvider {
     let parsed: TranslationResponse;
     try { parsed = JSON.parse(raw) as TranslationResponse; } catch { throw new Error("Translation provider returned an unreadable structured response."); }
     if (!Array.isArray(parsed.segments) || parsed.segments.length !== input.segments.length) throw new Error("Translation provider returned an incomplete segment set.");
-    return parsed.segments.map(segment => { const source = input.segments.find(item => item.segmentId === Number(segment.segmentId)); const tamilText = String(segment.tamilText).trim(); const duration = source?.targetDurationSeconds ?? 0; const needsContinuity = duration >= 1.7 && tamilText.length < duration * 6 && !/(தொடர்ந்து|சரி|இப்போ|அதனால்|பார்ப்போம்)/.test(tamilText); return { segmentId: Number(segment.segmentId), tamilText: needsContinuity ? `${tamilText} சரி, தொடர்ந்து பார்ப்போம்.` : tamilText }; });
+    return parsed.segments.map(segment => { const source = input.segments.find(item => item.segmentId === Number(segment.segmentId)); const tamilText = String(segment.tamilText).trim(); const duration = source?.targetDurationSeconds ?? 0; const deficit = Math.max(0, Math.ceil((duration * 7 - tamilText.length) / 24)); const fillers = ["சரி, தொடர்ந்து பார்ப்போம்", "இதை இன்னும் கொஞ்சம் தெளிவாக புரிந்துகொள்வோம்", "அடுத்து முக்கியமான விஷயத்தை பார்க்கலாம்", "இவ்வாறு இந்த உரையாடல் தொடர்ந்து செல்கிறது"]; const padding = Array.from({ length: Math.min(deficit, fillers.length) }, (_, index) => fillers[index]).join(". "); return { segmentId: Number(segment.segmentId), tamilText: padding && duration >= 1.2 ? `${tamilText}${tamilText.endsWith(".") ? "" : "."} ${padding}.` : tamilText }; });
   }
 }
 

@@ -28,8 +28,8 @@ describe("Tamil voice duration fitting", () => {
     expect(automaticVoiceRetryDelayMs(20)).toBe(30000);
   });
 
-  it("closes only short dialogue gaps while preserving real scene pauses", () => {
+  it("closes every positive dialogue gap for continuous reel speech", () => {
     const segments = [{ startSeconds: 0, endSeconds: 2 }, { startSeconds: 2.8, endSeconds: 4 }, { startSeconds: 7, endSeconds: 8 }];
-    expect(closeShortDialogueGaps(segments)).toEqual([{ startSeconds: 0, endSeconds: 2.8 }, { startSeconds: 2.8, endSeconds: 4 }, { startSeconds: 7, endSeconds: 8 }]);
+    expect(closeShortDialogueGaps(segments)).toEqual([{ startSeconds: 0, endSeconds: 2.8 }, { startSeconds: 2.8, endSeconds: 7 }, { startSeconds: 7, endSeconds: 8 }]);
   });
 });
