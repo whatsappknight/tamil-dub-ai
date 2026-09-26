@@ -259,7 +259,7 @@ export default function LocalizationProjectPage() {
       {project.dubbingProvider === "murf" ? <section className="rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-6"><h2 className="font-semibold">Murf AI managed output</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Murf AI manages translation, Tamil voice selection, and synchronization for this project. TamilDub AI securely imports the completed MP4 and SRT here. Create a Standard TamilDub project when you need local per-segment editing or voice regeneration.</p></section> : <section className="overflow-hidden rounded-3xl border border-border/70 bg-card">
         <div className="border-b border-border/70 p-6">
           <h2 className="font-semibold">Timeline translation editor</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Edit Tamil wording, voice, timing, and a specific pronunciation hint for each segment.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Edit Tamil wording, timing, and pronunciation while keeping one consistent project voice across the full reel.</p>
         </div>
         {query.data?.segments.length ? (
           <div className="divide-y divide-border/60">
@@ -276,9 +276,8 @@ export default function LocalizationProjectPage() {
                     </div>
                     <div><Label>Tamil translation</Label><Textarea className="mt-2 min-h-28" value={tamilText} onChange={event => setTamilText(event.target.value)} /></div>
                     <div className="space-y-2">
-                      <Label>Voice / speed</Label>
-                      <select className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={voiceId} onChange={event => setVoiceId(event.target.value as typeof voiceId)}>{voices.map(item => <option key={item}>{item}</option>)}</select>
-                      <select className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={voiceStyle} onChange={event => setVoiceStyle(event.target.value as typeof voiceStyle)}>{styles.map(item => <option key={item}>{item}</option>)}</select>
+                      <Label>Project voice / speed</Label>
+                      <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">{project.voiceId} · {project.voiceStyle}<br /><span className="text-xs text-muted-foreground">Locked for the full reel</span></p>
                       <Input type="number" min="0.85" max="1.18" step="0.01" value={speed} onChange={event => setSpeed(event.target.value)} />
                       <div className="flex gap-2"><Button type="button" size="sm" disabled={update.isPending} onClick={() => save(segment.id)}><Save className="mr-1 h-3.5 w-3.5" />Save</Button><Button type="button" size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>
                     </div>
