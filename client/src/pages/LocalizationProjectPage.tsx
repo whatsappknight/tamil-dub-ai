@@ -26,6 +26,7 @@ export default function LocalizationProjectPage() {
   const project = query.data?.project;
   const [editing, setEditing] = useState<number | null>(null);
   const [tamilText, setTamilText] = useState("");
+  const [paddingText, setPaddingText] = useState("");
   const [pronunciationHint, setPronunciationHint] = useState("");
   const [voiceId, setVoiceId] = useState<typeof voices[number]>("female-1");
   const [voiceStyle, setVoiceStyle] = useState<typeof styles[number]>("natural");
@@ -129,6 +130,7 @@ export default function LocalizationProjectPage() {
   function edit(segment: NonNullable<typeof query.data>["segments"][number]) {
     setEditing(segment.id);
     setTamilText(segment.tamilText || "");
+    setPaddingText("");
     setPronunciationHint(segment.pronunciationHint || "");
     setVoiceId(segment.voiceId as typeof voiceId);
     setVoiceStyle(segment.voiceStyle as typeof voiceStyle);
@@ -136,7 +138,7 @@ export default function LocalizationProjectPage() {
   }
 
   function save(segmentId: number) {
-    update.mutate({ projectId, segmentId, tamilText, pronunciationHint, voiceId, voiceStyle, speed: Number(speed) });
+    update.mutate({ projectId, segmentId, tamilText, paddingText, pronunciationHint, voiceId, voiceStyle, speed: Number(speed) });
   }
 
   function retryFailedStage() {
@@ -254,6 +256,7 @@ export default function LocalizationProjectPage() {
                   detail: segment.tamilText || segment.sourceText,
                 })) ?? []}
               />
+              {(() => { const gaps = (query.data?.segments ?? []).slice(0, -1).map((segment, index) => { const next = query.data?.segments[index + 1]; return next ? { from: segment.id, seconds: Number(next.startSeconds) - Number(segment.endSeconds) } : null; }).filter((gap): gap is { from: number; seconds: number } => Boolean(gap && gap.seconds > 0.05)); return <div className={`mt-3 rounded-xl border p-3 text-xs ${gaps.length ? "border-amber-400/40 bg-amber-500/5 text-amber-200" : "border-emerald-400/30 bg-emerald-500/5 text-emerald-200"}`} data-testid="waveform-gap-audit">{gaps.length ? `Gap audit: ${gaps.length} timestamp gap${gaps.length === 1 ? "" : "s"} remain (${gaps.slice(0, 4).map(gap => `${gap.seconds.toFixed(2)}s after #${gap.from}`).join(", ")}${gaps.length > 4 ? ", …" : ""}). Use Fix silent gaps or add continuation padding before rendering.` : "Gap audit: no timestamp gaps remain between dialogue segments."}</div>; })()}
               <div className="mt-4 flex gap-2">
                 <Button asChild><a href={project.finalVideoUrl} download><Download className="mr-2 h-4 w-4" />Download MP4</a></Button>
                 {project.subtitleSrtUrl ? <Button variant="outline" asChild><a href={project.subtitleSrtUrl} download>Download SRT</a></Button> : null}
@@ -303,7 +306,10 @@ export default function LocalizationProjectPage() {
                     <div className="space-y-2">
                       <Label>Project voice / speed</Label>
                       <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">{project.voiceId} · {project.voiceStyle}<br /><span className="text-xs text-muted-foreground">Locked for the full reel</span></p>
-                      <Input type="number" min="0.85" max="1.18" step="0.01" value={speed} onChange={event => setSpeed(event.target.value)} />
+                      <Input aria-label="Speech speed" type="number" min="0.85" max="1.18" step="0.01" value={speed} onChange={event => setSpeed(event.target.value)} />
+                      <Label className="mt-3 block">Continuation padding</Label>
+                      <Textarea aria-label="Continuation padding" className="min-h-20" value={paddingText} onChange={event => setPaddingText(event.target.value)} placeholder="Optional spoken Tamil to fill this segment" />
+                      <p className="text-xs text-muted-foreground">This text is spoken after the translation before the next segment.</p>
                       <div className="flex gap-2"><Button type="button" size="sm" disabled={update.isPending} onClick={() => save(segment.id)}><Save className="mr-1 h-3.5 w-3.5" />Save</Button><Button type="button" size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>
                     </div>
                   </div>
